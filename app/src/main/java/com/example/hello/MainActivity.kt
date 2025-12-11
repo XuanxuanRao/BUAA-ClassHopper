@@ -24,6 +24,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var emptyStateLayout: LinearLayout
     private lateinit var apiService: ApiService
 
+    private val PREFS_NAME = "ClassHopperPrefs"
+    private val KEY_STUDENT_ID = "student_id"
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -41,8 +44,11 @@ class MainActivity : AppCompatActivity() {
         calendarIcon = findViewById(R.id.calendarIcon)
         emptyStateLayout = findViewById(R.id.emptyStateLayout)
 
-        // 设置默认值
-        editTextId.setText("22370000")
+        // 从SharedPreferences读取保存的学号
+        val sharedPreferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+        val savedStudentId = sharedPreferences.getString(KEY_STUDENT_ID, "22370000")
+        editTextId.setText(savedStudentId)
+        
         // 将默认日期设置为当天
         val currentDate = Calendar.getInstance()
         val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
@@ -61,6 +67,15 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.btnGetClass).setOnClickListener {
             getClassInfo()
         }
+    }
+    
+    override fun onPause() {
+        super.onPause()
+        // 在应用暂停时保存学号
+        val sharedPreferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+        val editor = sharedPreferences.edit()
+        editor.putString(KEY_STUDENT_ID, editTextId.text.toString())
+        editor.apply()
     }
 
     private fun showEmptyState() {
@@ -134,6 +149,12 @@ class MainActivity : AppCompatActivity() {
             Toast.makeText(this, "请输入学号和日期", Toast.LENGTH_SHORT).show()
             return
         }
+        
+        // 保存学号到SharedPreferences
+        val sharedPreferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+        val editor = sharedPreferences.edit()
+        editor.putString(KEY_STUDENT_ID, id)
+        editor.apply()
 
         // 登录并获取课表
         apiService.login(id, object : ApiService.OnLoginListener {
