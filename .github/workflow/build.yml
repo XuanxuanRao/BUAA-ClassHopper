@@ -1,0 +1,50 @@
+name: Build APK
+ 
+on:
+  push:
+    branches: [ "release" ]  # The workflow is triggered only when the code is pushed to the main branch.
+  pull_request:
+    branches: [ "release" ]  # The workflow is triggered for pull requests targeting the main branch.
+ 
+jobs:
+  build:
+    runs-on: ubuntu-latest  # The operating system environment for the specified task to run. Here is the latest version of Ubuntu.
+ 
+    steps:
+      - uses: actions/checkout@v4  # Checks out the repository code to the runner's filesystem.
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew  # Grants executable permissions to the Gradle wrapper script.
+ 
+      - name: Set up JDK 11
+        uses: actions/setup-java@v4  # Sets up Java Development Kit version 11 for the build environment.
+        with:
+          java-version: '11'  # Specifies the Java version to use.
+          distribution: 'temurin'  # Uses the Eclipse Temurin distribution of the JDK.
+          cache: gradle  # Caches Gradle dependencies to speed up future builds.
+ 
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4  # Configures Gradle for the workflow, ensuring compatibility and caching.
+ 
+      - name: Decode Keystore
+        env:
+          ENCODED_STRING: ${{ secrets.SIGNING_KEY }}  # Uses the encoded signing key stored in GitHub Secrets.
+        run: |
+          echo $ENCODED_STRING | base64 -di > app/keystore.jks  # Decodes the base64-encoded keystore and saves it as a .jks file.
+ 
+      - name: Clean Gradle
+        run: ./gradlew clean  # Removes previous build artifacts to ensure a clean build environment.
+ 
+      - name: Build Release APK
+        run: ./gradlew assembleRelease -x lint --stacktrace --info  # Builds the release APK, skipping lint checks for faster execution.
+        env:
+          SIGNING_STORE_PASSWORD: ${{ secrets.KEY_STORE_PASSWORD }}  # Provides the keystore password from GitHub Secrets.
+          SIGNING_KEY_ALIAS: ${{ secrets.ALIAS }}  # Specifies the alias for the signing key.
+          SIGNING_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}  # Provides the key password from GitHub Secrets.
+ 
+      - name: Upload Signed Release APK
+        uses: actions/upload-artifact@v4  # Uploads the generated APK as a workflow artifact for download.
+        with:
+          name: DualModeKeyBoard-signed-release  # Names the artifact for easy identification.
+          path: |
+            app/build/outputs/apk/release/*.apk  # Specifies the path to the release APK files.
+          retention-days: 90  # Sets the artifact retention period to 90 days.
