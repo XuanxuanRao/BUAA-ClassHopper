@@ -231,7 +231,7 @@ class MainActivity : AppCompatActivity() {
             // 添加教室名称
             row.addView(TextView(this).apply {
                 text = course.classroomName
-                layoutParams = TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 1f)
+                layoutParams = TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 0.75f)
                 gravity = Gravity.CENTER_VERTICAL
                 setPadding(4, 4, 4, 4)
             })
@@ -240,7 +240,7 @@ class MainActivity : AppCompatActivity() {
             val signButton = Button(this).apply {
                 text = if (course.signStatus == "1") "已签到" else "签到"
                 isEnabled = course.signStatus != "1"
-                layoutParams = TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 0.5f)
+                layoutParams = TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 0.75f)
                 setOnClickListener {
                     signClass(course.id)
                 }
