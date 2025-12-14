@@ -14,6 +14,8 @@ import com.example.hello.model.Course
 import com.example.hello.service.ApiService
 import java.text.SimpleDateFormat
 import java.util.*
+import androidx.core.content.edit
+import androidx.core.graphics.toColorInt
 
 class MainActivity : AppCompatActivity() {
     private lateinit var tableLayout: TableLayout
@@ -73,9 +75,9 @@ class MainActivity : AppCompatActivity() {
         super.onPause()
         // 在应用暂停时保存学号
         val sharedPreferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
-        val editor = sharedPreferences.edit()
-        editor.putString(KEY_STUDENT_ID, editTextId.text.toString())
-        editor.apply()
+        sharedPreferences.edit {
+            putString(KEY_STUDENT_ID, editTextId.text.toString())
+        }
     }
 
     private fun showEmptyState() {
@@ -120,7 +122,7 @@ class MainActivity : AppCompatActivity() {
                     calendar.time = date
                 }
             }
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             // 解析失败时使用当前日期
         }
 
@@ -132,6 +134,8 @@ class MainActivity : AppCompatActivity() {
                 val formattedDay = String.format(Locale.getDefault(), "%02d", selectedDayOfMonth)
                 val formattedDate = "$selectedYear-$formattedMonth-$formattedDay"
                 textViewDate.text = formattedDate
+                // 自动加载班级信息
+                getClassInfo()
             },
             year,
             month,
@@ -152,9 +156,9 @@ class MainActivity : AppCompatActivity() {
         
         // 保存学号到SharedPreferences
         val sharedPreferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
-        val editor = sharedPreferences.edit()
-        editor.putString(KEY_STUDENT_ID, id)
-        editor.apply()
+        sharedPreferences.edit {
+            putString(KEY_STUDENT_ID, id)
+        }
 
         // 登录并获取课表
         apiService.login(id, object : ApiService.OnLoginListener {
@@ -205,7 +209,7 @@ class MainActivity : AppCompatActivity() {
                     TableRow.LayoutParams.WRAP_CONTENT
                 )
                 setPadding(8, 8, 8, 8)
-                setBackgroundColor(if (index % 2 == 0) Color.WHITE else Color.parseColor("#F5F5F5"))
+                setBackgroundColor(if (index % 2 == 0) Color.WHITE else "#F5F5F5".toColorInt())
             }
 
             // 添加课程名称
