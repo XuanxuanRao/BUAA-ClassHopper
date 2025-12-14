@@ -45,6 +45,5 @@ jobs:
         uses: actions/upload-artifact@v4  # Uploads the generated APK as a workflow artifact for download.
         with:
           name: DualModeKeyBoard-signed-release  # Names the artifact for easy identification.
-          path: |
-            app/build/outputs/apk/release/*.apk  # Specifies the path to the release APK files.
+          path: app/build/outputs/apk/release/*.apk  # Specifies the path to the release APK files.
           retention-days: 90  # Sets the artifact retention period to 90 days.
