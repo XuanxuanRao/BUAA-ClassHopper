@@ -2,9 +2,9 @@ name: Build APK
  
 on:
   push:
-    branches: [ "release" ]  # The workflow is triggered only when the code is pushed to the main branch.
+    branches: [ "release" ]  # The workflow is triggered only when the code is pushed to the release branch.
   pull_request:
-    branches: [ "release" ]  # The workflow is triggered for pull requests targeting the main branch.
+    branches: [ "release" ]  # The workflow is triggered for pull requests targeting the release branch.
  
 jobs:
   build:
