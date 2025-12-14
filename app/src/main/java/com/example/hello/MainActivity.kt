@@ -24,6 +24,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var datePickerContainer: RelativeLayout
     private lateinit var calendarIcon: ImageView
     private lateinit var emptyStateLayout: LinearLayout
+    private lateinit var userInfoTextView: TextView
     private lateinit var apiService: ApiService
 
     private val PREFS_NAME = "ClassHopperPrefs"
@@ -45,6 +46,7 @@ class MainActivity : AppCompatActivity() {
         datePickerContainer = findViewById(R.id.datePickerContainer)
         calendarIcon = findViewById(R.id.calendarIcon)
         emptyStateLayout = findViewById(R.id.emptyStateLayout)
+        userInfoTextView = findViewById(R.id.userInfoTextView)
 
         // 从SharedPreferences读取保存的学号
         val sharedPreferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
@@ -162,7 +164,12 @@ class MainActivity : AppCompatActivity() {
 
         // 登录并获取课表
         apiService.login(id, object : ApiService.OnLoginListener {
-            override fun onSuccess(userId: String, sessionId: String) {
+            override fun onSuccess(userId: String, sessionId: String, realName: String, academyName: String) {
+                // 显示用户信息
+                runOnUiThread {
+                    userInfoTextView.text = "${realName} - ${academyName}"
+                }
+                
                 // 获取课表
                 val dateStr = date.replace("-", "")
                 apiService.getCourseSchedule(userId, sessionId, dateStr, object : ApiService.OnCourseScheduleListener {

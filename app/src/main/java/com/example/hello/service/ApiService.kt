@@ -1,7 +1,6 @@
 package com.example.hello.service
 
 import android.content.Context
-import android.widget.Toast
 import com.example.hello.model.Course
 import com.example.hello.model.CourseResponse
 import com.google.gson.Gson
@@ -15,7 +14,7 @@ class ApiService(private val context: Context) {
     private val gson = Gson()
 
     interface OnLoginListener {
-        fun onSuccess(userId: String, sessionId: String)
+        fun onSuccess(userId: String, sessionId: String, realName: String, academyName: String)
         fun onFailure(error: String)
     }
 
@@ -51,13 +50,16 @@ class ApiService(private val context: Context) {
                 e.printStackTrace()
             }
 
-            override fun onResponse(call: Call, loginResponse: Response) {
+            override fun onResponse(call: Call, response: Response) {
                 try {
-                    val loginData = loginResponse.body?.string()
+                    val loginData = response.body?.string()
                     val loginJson = gson.fromJson(loginData, JsonObject::class.java)
-                    val userId = loginJson.getAsJsonObject("result").get("id").asString
-                    val sessionId = loginJson.getAsJsonObject("result").get("sessionId").asString
-                    listener.onSuccess(userId, sessionId)
+                    val resultObject = loginJson.getAsJsonObject("result")
+                    val userId = resultObject.get("id").asString
+                    val sessionId = resultObject.get("sessionId").asString
+                    val realName = resultObject.get("realName").asString
+                    val academyName = resultObject.get("academyName").asString
+                    listener.onSuccess(userId, sessionId, realName, academyName)
                 } catch (e: Exception) {
                     listener.onFailure("登录失败: ${e.message}")
                     e.printStackTrace()
@@ -113,7 +115,7 @@ class ApiService(private val context: Context) {
     fun signClass(studentId: String, courseId: String, listener: OnSignListener) {
         // 首先登录获取sessionId
         login(studentId, object : OnLoginListener {
-            override fun onSuccess(userId: String, sessionId: String) {
+            override fun onSuccess(userId: String, sessionId: String, realName: String, academyName: String) {
                 // 构建签到请求
                 val timestamp = System.currentTimeMillis()
                 val formBody = FormBody.Builder()
