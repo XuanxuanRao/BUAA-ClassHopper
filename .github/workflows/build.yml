@@ -2,9 +2,9 @@ name: Build APK
  
 on:
   push:
-    branches: [ "release" ]  # The workflow is triggered only when the code is pushed to the main branch.
+    branches: [ "release" ]  # The workflow is triggered only when the code is pushed to the release branch.
   pull_request:
-    branches: [ "release" ]  # The workflow is triggered for pull requests targeting the main branch.
+    branches: [ "release" ]  # The workflow is triggered for pull requests targeting the release branch.
  
 jobs:
   build:
@@ -15,10 +15,10 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x ./gradlew  # Grants executable permissions to the Gradle wrapper script.
  
-      - name: Set up JDK 11
-        uses: actions/setup-java@v4  # Sets up Java Development Kit version 11 for the build environment.
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4  # Sets up Java Development Kit version 17 for the build environment.
         with:
-          java-version: '11'  # Specifies the Java version to use.
+          java-version: '17'  # Specifies the Java version to use.
           distribution: 'temurin'  # Uses the Eclipse Temurin distribution of the JDK.
           cache: gradle  # Caches Gradle dependencies to speed up future builds.
  
@@ -45,6 +45,5 @@ jobs:
         uses: actions/upload-artifact@v4  # Uploads the generated APK as a workflow artifact for download.
         with:
           name: DualModeKeyBoard-signed-release  # Names the artifact for easy identification.
-          path: |
-            app/build/outputs/apk/release/*.apk  # Specifies the path to the release APK files.
+          path: app/build/outputs/apk/release/*.apk  # Specifies the path to the release APK files.
           retention-days: 90  # Sets the artifact retention period to 90 days.
