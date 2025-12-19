@@ -1,12 +1,9 @@
 package com.example.hello
 
 import android.app.DatePickerDialog
-import android.graphics.Color
 import android.os.Bundle
-import android.view.Gravity
 import android.view.View
 import android.widget.*
-import androidx.core.content.ContextCompat
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -14,10 +11,11 @@ import androidx.core.view.WindowInsetsCompat
 import com.example.hello.model.Course
 import com.example.hello.service.ApiService
 import com.example.hello.service.ChatWebSocketService
+import com.example.hello.ui.CourseTableRenderer
+import com.example.hello.ui.WebSocketStatusIndicator
 import java.text.SimpleDateFormat
 import java.util.*
 import androidx.core.content.edit
-import androidx.core.graphics.toColorInt
 import okio.ByteString
 
 class MainActivity : AppCompatActivity() {
@@ -31,8 +29,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var webSocketStatusIcon: ImageView
     private lateinit var apiService: ApiService
     private lateinit var chatWebSocketService: ChatWebSocketService
+    private lateinit var webSocketStatusIndicator: WebSocketStatusIndicator
+    private lateinit var courseTableRenderer: CourseTableRenderer
 
-    private val FIXED_CHAT_TOKEN = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJ1c2VySWQiOjEsInJvbGUiOiJBRE1JTiIsImV4cCI6MTc2NjEyNzQxOH0.VaPp4V7pFWA1W9NI4fatXwKbUBK-3EYFVit-Ns9OiScDMgrgFqmT5XCR3Y8SNRjtgS83IoMptH-4BvlgvhGL16QCsq53xbULxEP-i-yuZMM1yN1GGr157cjN8PQ36XUCEywfg7IhmSHnxelQlpTasxQhq4Sqw-m2HZdzTX6QPEfsB5nczx8O5TuRqaB-Jc2cd9x3Yr41ZxA69qjH1e2DaozCxLFu1PWX71b2emqMMLKGrS5rqgX2MmdYVD2C2Cczk3V4GCBLxCOuWwTN2BfyZHYnusGD-V9_CpSXRU663s3VKsM-mLh4mb2fR8pYbyeNv9T1ChsIC_QHjZu3dSbtJg"
+    private val FIXED_CHAT_TOKEN = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJ1c2VySWQiOjEsInJvbGUiOiJBRE1JTiIsImV4cCI6MTc2NjEyOTQ3MH0.Z8a_lMcHPyuT9mjLtNKpn7xJqES9f9slsZdo9w_E3JjMaPe7ZBL3oJ7aYnyHfCchYn4MxkZOKLq_VJtM2ul9-FEh_-CGq6EF0C6ed_bGbXpK-VfwwWz2CoMLhwXL9yxWrUx57zmDECrR6nQHexFfoS_8k_vScFw6QG1_3wQFiuwFz7OoBf82yUwk-7a73G-E3vkeo2C8rV6Tol8CdPYLqe0bJhvymC9MIerylgwae_KMKxIuqm2VY4A2s-JQ7wWu5KUSibEc88o_gdTxBkLKHS1LChK8NGL-P_zMKv8Znuj1sQjQkkWUnY6Wfkbmxkh1I0tA76RRqd1jE3PrhfaJ1w"
 
     // WARNING: 临时跳过 TLS 证书校验（仅用于测试环境，正式环境务必改回 false）
     private val ALLOW_INSECURE_TLS = true
@@ -59,7 +59,14 @@ class MainActivity : AppCompatActivity() {
         userInfoTextView = findViewById(R.id.userInfoTextView)
         webSocketStatusIcon = findViewById(R.id.webSocketStatusIcon)
 
-        setWebSocketStatusConnecting()
+        webSocketStatusIndicator = WebSocketStatusIndicator(this, webSocketStatusIcon)
+        webSocketStatusIndicator.showConnecting()
+
+        courseTableRenderer = CourseTableRenderer(
+            context = this,
+            tableLayout = tableLayout,
+            onSignClick = { courseId -> signClass(courseId) }
+        )
 
         // 从SharedPreferences读取保存的学号
         val sharedPreferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
@@ -90,7 +97,7 @@ class MainActivity : AppCompatActivity() {
         chatWebSocketService = ChatWebSocketService(allowInsecureForDebug = ALLOW_INSECURE_TLS)
         chatWebSocketService.connect(FIXED_CHAT_TOKEN, object : ChatWebSocketService.Listener {
             override fun onOpen() {
-                runOnUiThread { setWebSocketStatusConnected() }
+                runOnUiThread { webSocketStatusIndicator.showConnected() }
             }
 
             override fun onMessage(text: String) {
@@ -102,35 +109,17 @@ class MainActivity : AppCompatActivity() {
             }
 
             override fun onClosing(code: Int, reason: String) {
-                runOnUiThread { setWebSocketStatusDisconnected() }
+                runOnUiThread { webSocketStatusIndicator.showDisconnected() }
             }
 
             override fun onClosed(code: Int, reason: String) {
-                runOnUiThread { setWebSocketStatusDisconnected() }
+                runOnUiThread { webSocketStatusIndicator.showDisconnected() }
             }
 
             override fun onFailure(error: String) {
-                runOnUiThread { setWebSocketStatusDisconnected() }
+                runOnUiThread { webSocketStatusIndicator.showDisconnected() }
             }
         })
-    }
-
-    private fun setWebSocketStatusConnected() {
-        webSocketStatusIcon.setImageResource(android.R.drawable.presence_online)
-        webSocketStatusIcon.setColorFilter(ContextCompat.getColor(this, R.color.ws_connected))
-        webSocketStatusIcon.contentDescription = "WebSocket 已连接"
-    }
-
-    private fun setWebSocketStatusConnecting() {
-        webSocketStatusIcon.setImageResource(android.R.drawable.presence_away)
-        webSocketStatusIcon.setColorFilter(ContextCompat.getColor(this, R.color.ws_connecting))
-        webSocketStatusIcon.contentDescription = "WebSocket 连接中"
-    }
-
-    private fun setWebSocketStatusDisconnected() {
-        webSocketStatusIcon.setImageResource(android.R.drawable.presence_offline)
-        webSocketStatusIcon.setColorFilter(ContextCompat.getColor(this, R.color.ws_disconnected))
-        webSocketStatusIcon.contentDescription = "WebSocket 未连接"
     }
     
     override fun onPause() {
@@ -152,21 +141,6 @@ class MainActivity : AppCompatActivity() {
         emptyStateLayout.visibility = View.GONE
     }
 
-    // 格式化时间，只保留时间部分（HH:mm - HH:mm）
-    private fun formatTime(beginTime: String, endTime: String): String {
-        try {
-            val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
-            val begin = dateFormat.parse(beginTime)
-            val end = dateFormat.parse(endTime)
-            val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
-            if (begin != null && end != null) {
-                return "${timeFormat.format(begin)} - ${timeFormat.format(end)}"
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-        return ""
-    }
 
     private fun showDatePickerDialog() {
         val calendar = Calendar.getInstance()
@@ -236,7 +210,7 @@ class MainActivity : AppCompatActivity() {
                     override fun onSuccess(courses: List<Course>) {
                         runOnUiThread {
                             hideEmptyState()
-                            updateTable(courses)
+                            courseTableRenderer.render(courses)
                         }
                     }
 
@@ -262,61 +236,6 @@ class MainActivity : AppCompatActivity() {
         })
     }
 
-    private fun updateTable(courses: List<Course>) {
-        // 清除之前的数据行，保留表头
-        for (i in tableLayout.childCount - 1 downTo 1) {
-            tableLayout.removeViewAt(i)
-        }
-
-        // 添加新数据
-        courses.forEachIndexed { index, course ->
-            val row = TableRow(this).apply {
-                layoutParams = TableRow.LayoutParams(
-                    TableRow.LayoutParams.MATCH_PARENT,
-                    TableRow.LayoutParams.WRAP_CONTENT
-                )
-                setPadding(8, 8, 8, 8)
-                setBackgroundColor(if (index % 2 == 0) Color.WHITE else "#F5F5F5".toColorInt())
-            }
-
-            // 添加课程名称
-            row.addView(TextView(this).apply {
-                text = course.courseName
-                layoutParams = TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 1f)
-                gravity = Gravity.CENTER_VERTICAL
-                setPadding(4, 4, 4, 4)
-            })
-
-            // 添加课程时间
-            row.addView(TextView(this).apply {
-                text = formatTime(course.classBeginTime, course.classEndTime)
-                layoutParams = TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 1f)
-                gravity = Gravity.CENTER_VERTICAL
-                setPadding(4, 4, 4, 4)
-            })
-
-            // 添加教室名称
-            row.addView(TextView(this).apply {
-                text = course.classroomName
-                layoutParams = TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 0.75f)
-                gravity = Gravity.CENTER_VERTICAL
-                setPadding(4, 4, 4, 4)
-            })
-
-            // 添加签到按钮
-            val signButton = Button(this).apply {
-                text = if (course.signStatus == "1") "已签到" else "签到"
-                isEnabled = course.signStatus != "1"
-                layoutParams = TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 0.75f)
-                setOnClickListener {
-                    signClass(course.id)
-                }
-            }
-            row.addView(signButton)
-
-            tableLayout.addView(row)
-        }
-    }
 
     private fun signClass(courseId: String) {
         val studentId = editTextId.text.toString()
