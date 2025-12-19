@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#90CAF9</color>
+    <color name="colorOnPrimary">#0B1C2D</color>
+    <color name="colorSecondary">#03DAC6</color>
+    <color name="colorOnSecondary">#001B18</color>
+    <color name="colorSurface">#121212</color>
+    <color name="colorOnSurface">#E0E0E0</color>
+    <color name="colorSurfaceVariant">#1F2A36</color>
+    <color name="colorOutline">#3A4754</color>
+
+    <color name="ws_connected">#81C784</color>
+    <color name="ws_disconnected">#9E9E9E</color>
+    <color name="ws_connecting">#FFB74D</color>
+</resources>
