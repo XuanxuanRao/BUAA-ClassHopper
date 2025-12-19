@@ -6,16 +6,19 @@ import android.os.Bundle
 import android.view.Gravity
 import android.view.View
 import android.widget.*
+import androidx.core.content.ContextCompat
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.example.hello.model.Course
 import com.example.hello.service.ApiService
+import com.example.hello.service.ChatWebSocketService
 import java.text.SimpleDateFormat
 import java.util.*
 import androidx.core.content.edit
 import androidx.core.graphics.toColorInt
+import okio.ByteString
 
 class MainActivity : AppCompatActivity() {
     private lateinit var tableLayout: TableLayout
@@ -25,7 +28,14 @@ class MainActivity : AppCompatActivity() {
     private lateinit var calendarIcon: ImageView
     private lateinit var emptyStateLayout: LinearLayout
     private lateinit var userInfoTextView: TextView
+    private lateinit var webSocketStatusIcon: ImageView
     private lateinit var apiService: ApiService
+    private lateinit var chatWebSocketService: ChatWebSocketService
+
+    private val FIXED_CHAT_TOKEN = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJ1c2VySWQiOjEsInJvbGUiOiJBRE1JTiIsImV4cCI6MTc2NjEyNzQxOH0.VaPp4V7pFWA1W9NI4fatXwKbUBK-3EYFVit-Ns9OiScDMgrgFqmT5XCR3Y8SNRjtgS83IoMptH-4BvlgvhGL16QCsq53xbULxEP-i-yuZMM1yN1GGr157cjN8PQ36XUCEywfg7IhmSHnxelQlpTasxQhq4Sqw-m2HZdzTX6QPEfsB5nczx8O5TuRqaB-Jc2cd9x3Yr41ZxA69qjH1e2DaozCxLFu1PWX71b2emqMMLKGrS5rqgX2MmdYVD2C2Cczk3V4GCBLxCOuWwTN2BfyZHYnusGD-V9_CpSXRU663s3VKsM-mLh4mb2fR8pYbyeNv9T1ChsIC_QHjZu3dSbtJg"
+
+    // WARNING: 临时跳过 TLS 证书校验（仅用于测试环境，正式环境务必改回 false）
+    private val ALLOW_INSECURE_TLS = true
 
     private val PREFS_NAME = "ClassHopperPrefs"
     private val KEY_STUDENT_ID = "student_id"
@@ -47,6 +57,9 @@ class MainActivity : AppCompatActivity() {
         calendarIcon = findViewById(R.id.calendarIcon)
         emptyStateLayout = findViewById(R.id.emptyStateLayout)
         userInfoTextView = findViewById(R.id.userInfoTextView)
+        webSocketStatusIcon = findViewById(R.id.webSocketStatusIcon)
+
+        setWebSocketStatusConnecting()
 
         // 从SharedPreferences读取保存的学号
         val sharedPreferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
@@ -71,6 +84,53 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.btnGetClass).setOnClickListener {
             getClassInfo()
         }
+
+        // 使用固定 token 建立 WebSocket 连接
+        // 临时不校验证书
+        chatWebSocketService = ChatWebSocketService(allowInsecureForDebug = ALLOW_INSECURE_TLS)
+        chatWebSocketService.connect(FIXED_CHAT_TOKEN, object : ChatWebSocketService.Listener {
+            override fun onOpen() {
+                runOnUiThread { setWebSocketStatusConnected() }
+            }
+
+            override fun onMessage(text: String) {
+                // no-op
+            }
+
+            override fun onMessage(bytes: ByteString) {
+                // no-op
+            }
+
+            override fun onClosing(code: Int, reason: String) {
+                runOnUiThread { setWebSocketStatusDisconnected() }
+            }
+
+            override fun onClosed(code: Int, reason: String) {
+                runOnUiThread { setWebSocketStatusDisconnected() }
+            }
+
+            override fun onFailure(error: String) {
+                runOnUiThread { setWebSocketStatusDisconnected() }
+            }
+        })
+    }
+
+    private fun setWebSocketStatusConnected() {
+        webSocketStatusIcon.setImageResource(android.R.drawable.presence_online)
+        webSocketStatusIcon.setColorFilter(ContextCompat.getColor(this, R.color.ws_connected))
+        webSocketStatusIcon.contentDescription = "WebSocket 已连接"
+    }
+
+    private fun setWebSocketStatusConnecting() {
+        webSocketStatusIcon.setImageResource(android.R.drawable.presence_away)
+        webSocketStatusIcon.setColorFilter(ContextCompat.getColor(this, R.color.ws_connecting))
+        webSocketStatusIcon.contentDescription = "WebSocket 连接中"
+    }
+
+    private fun setWebSocketStatusDisconnected() {
+        webSocketStatusIcon.setImageResource(android.R.drawable.presence_offline)
+        webSocketStatusIcon.setColorFilter(ContextCompat.getColor(this, R.color.ws_disconnected))
+        webSocketStatusIcon.contentDescription = "WebSocket 未连接"
     }
     
     override fun onPause() {
@@ -276,5 +336,12 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         })
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        if (::chatWebSocketService.isInitialized) {
+            chatWebSocketService.close()
+        }
     }
 }
