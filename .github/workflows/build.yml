@@ -40,6 +40,7 @@ jobs:
           SIGNING_STORE_PASSWORD: ${{ secrets.KEY_STORE_PASSWORD }}  # Provides the keystore password from GitHub Secrets.
           SIGNING_KEY_ALIAS: ${{ secrets.ALIAS }}  # Specifies the alias for the signing key.
           SIGNING_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}  # Provides the key password from GitHub Secrets.
+          APP_SECRET: ${{ secrets.APP_SECRET }}
  
       - name: Upload Signed Release APK
         uses: actions/upload-artifact@v4  # Uploads the generated APK as a workflow artifact for download.
