@@ -167,21 +167,6 @@ class ApiService(private val context: Context) {
     }
 
     fun login(id: String, listener: OnLoginListener) {
-        // 先确保有有效的token
-        if (!isTokenValid()) {
-            getAuthToken(object : OnAuthListener {
-                override fun onSuccess(newToken: String, newExpireAt: Long) {
-                    // token获取成功后，重新调用login方法
-                    login(id, listener)
-                }
-                
-                override fun onFailure(error: String) {
-                    listener.onFailure(error)
-                }
-            })
-            return
-        }
-        
         val loginUrl = "https://iclass.buaa.edu.cn:8346/app/user/login.action".toHttpUrlOrNull()?.newBuilder()
             ?.addQueryParameter("password", "")
             ?.addQueryParameter("phone", id)
@@ -194,7 +179,6 @@ class ApiService(private val context: Context) {
         val loginRequest = Request.Builder()
             .url(loginUrl)
             .get()
-            .addHeader("Authorization", "$token")
             .build()
 
         client.newCall(loginRequest).enqueue(object : Callback {
@@ -222,21 +206,7 @@ class ApiService(private val context: Context) {
     }
 
     fun getCourseSchedule(userId: String, sessionId: String, dateStr: String, listener: OnCourseScheduleListener) {
-        // 先确保有有效的token
-        if (!isTokenValid()) {
-            getAuthToken(object : OnAuthListener {
-                override fun onSuccess(newToken: String, newExpireAt: Long) {
-                    // token获取成功后，重新调用getCourseSchedule方法
-                    getCourseSchedule(userId, sessionId, dateStr, listener)
-                }
-                
-                override fun onFailure(error: String) {
-                    listener.onFailure(error)
-                }
-            })
-            return
-        }
-        
+
         val scheduleUrl = "https://iclass.buaa.edu.cn:8346/app/course/get_stu_course_sched.action".toHttpUrlOrNull()?.newBuilder()
             ?.addQueryParameter("dateStr", dateStr)
             ?.addQueryParameter("id", userId)
@@ -246,7 +216,6 @@ class ApiService(private val context: Context) {
         val scheduleRequest = Request.Builder()
             .url(scheduleUrl)
             .addHeader("sessionId", sessionId)
-            .addHeader("Authorization", "Bearer ${token}")
             .get()
             .build()
 
