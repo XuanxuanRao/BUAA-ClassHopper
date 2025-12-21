@@ -2,10 +2,12 @@ package com.example.hello
 
 import android.app.DatePickerDialog
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.*
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.edit
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.example.hello.model.Course
@@ -13,10 +15,11 @@ import com.example.hello.service.ApiService
 import com.example.hello.service.ChatWebSocketService
 import com.example.hello.ui.CourseTableRenderer
 import com.example.hello.ui.WebSocketStatusIndicator
+import com.example.hello.utils.DeviceIdUtil
+import okio.ByteString
 import java.text.SimpleDateFormat
 import java.util.*
-import androidx.core.content.edit
-import okio.ByteString
+
 
 class MainActivity : AppCompatActivity() {
     private lateinit var tableLayout: TableLayout
@@ -32,7 +35,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var webSocketStatusIndicator: WebSocketStatusIndicator
     private lateinit var courseTableRenderer: CourseTableRenderer
 
-    private val FIXED_CHAT_TOKEN = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJ1c2VySWQiOjEsInJvbGUiOiJBRE1JTiIsImV4cCI6MTc2NjEyOTQ3MH0.Z8a_lMcHPyuT9mjLtNKpn7xJqES9f9slsZdo9w_E3JjMaPe7ZBL3oJ7aYnyHfCchYn4MxkZOKLq_VJtM2ul9-FEh_-CGq6EF0C6ed_bGbXpK-VfwwWz2CoMLhwXL9yxWrUx57zmDECrR6nQHexFfoS_8k_vScFw6QG1_3wQFiuwFz7OoBf82yUwk-7a73G-E3vkeo2C8rV6Tol8CdPYLqe0bJhvymC9MIerylgwae_KMKxIuqm2VY4A2s-JQ7wWu5KUSibEc88o_gdTxBkLKHS1LChK8NGL-P_zMKv8Znuj1sQjQkkWUnY6Wfkbmxkh1I0tA76RRqd1jE3PrhfaJ1w"
+    // 不再使用固定token，改为使用登录后获取的token
 
     // WARNING: 临时跳过 TLS 证书校验（仅用于测试环境，正式环境务必改回 false）
     private val ALLOW_INSECURE_TLS = true
@@ -92,32 +95,47 @@ class MainActivity : AppCompatActivity() {
             getClassInfo()
         }
 
-        // 使用固定 token 建立 WebSocket 连接
-        // 临时不校验证书
+        // 初始化WebSocket服务
         chatWebSocketService = ChatWebSocketService(allowInsecureForDebug = ALLOW_INSECURE_TLS)
-        chatWebSocketService.connect(FIXED_CHAT_TOKEN, object : ChatWebSocketService.Listener {
-            override fun onOpen() {
-                runOnUiThread { webSocketStatusIndicator.showConnected() }
-            }
+        
+        // APP启动后自动获取token
+        apiService.getAuthToken(object : ApiService.OnAuthListener {
+            override fun onSuccess(token: String, expireAt: Long) {
+                runOnUiThread {
+                    Log.d("MainActivity", "自动获取token成功")
+                    // 使用获取到的token建立WebSocket连接
+                    chatWebSocketService.connect(token, object : ChatWebSocketService.Listener {
+                        override fun onOpen() {
+                            runOnUiThread { webSocketStatusIndicator.showConnected() }
+                        }
 
-            override fun onMessage(text: String) {
-                // no-op
-            }
+                        override fun onMessage(text: String) {
+                            // no-op
+                        }
 
-            override fun onMessage(bytes: ByteString) {
-                // no-op
-            }
+                        override fun onMessage(bytes: ByteString) {
+                            // no-op
+                        }
 
-            override fun onClosing(code: Int, reason: String) {
-                runOnUiThread { webSocketStatusIndicator.showDisconnected() }
-            }
+                        override fun onClosing(code: Int, reason: String) {
+                            runOnUiThread { webSocketStatusIndicator.showDisconnected() }
+                        }
 
-            override fun onClosed(code: Int, reason: String) {
-                runOnUiThread { webSocketStatusIndicator.showDisconnected() }
+                        override fun onClosed(code: Int, reason: String) {
+                            runOnUiThread { webSocketStatusIndicator.showDisconnected() }
+                        }
+
+                        override fun onFailure(error: String) {
+                            runOnUiThread { webSocketStatusIndicator.showDisconnected() }
+                        }
+                    })
+                }
             }
 
             override fun onFailure(error: String) {
-                runOnUiThread { webSocketStatusIndicator.showDisconnected() }
+                runOnUiThread {
+                    Log.e("MainActivity", "自动获取token失败: $error")
+                }
             }
         })
     }
@@ -202,6 +220,38 @@ class MainActivity : AppCompatActivity() {
                 // 显示用户信息
                 runOnUiThread {
                     userInfoTextView.text = "${realName} - ${academyName}"
+                    
+                    // 使用登录后获取的token建立WebSocket连接
+                    apiService.token?.let {
+                        // 关闭现有连接（如果有）
+                        chatWebSocketService.close()
+                        // 使用新token重新连接
+                        chatWebSocketService.connect(it, object : ChatWebSocketService.Listener {
+                            override fun onOpen() {
+                                runOnUiThread { webSocketStatusIndicator.showConnected() }
+                            }
+
+                            override fun onMessage(text: String) {
+                                // no-op
+                            }
+
+                            override fun onMessage(bytes: ByteString) {
+                                // no-op
+                            }
+
+                            override fun onClosing(code: Int, reason: String) {
+                                runOnUiThread { webSocketStatusIndicator.showDisconnected() }
+                            }
+
+                            override fun onClosed(code: Int, reason: String) {
+                                runOnUiThread { webSocketStatusIndicator.showDisconnected() }
+                            }
+
+                            override fun onFailure(error: String) {
+                                runOnUiThread { webSocketStatusIndicator.showDisconnected() }
+                            }
+                        })
+                    }
                 }
                 
                 // 获取课表

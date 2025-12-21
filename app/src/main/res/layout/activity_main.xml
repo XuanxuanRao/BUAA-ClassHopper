@@ -26,7 +26,7 @@
         android:layout_marginEnd="16dp"
         android:contentDescription="WebSocket 未连接"
         android:src="@android:drawable/presence_offline"
-        android:tint="@color/ws_disconnected"
+        app:tint="@color/ws_disconnected"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
@@ -174,7 +174,7 @@
                     android:layout_height="120dp"
                     android:layout_marginBottom="24dp"
                     android:src="@android:drawable/ic_menu_recent_history"
-                    android:tint="#CCCCCC" />
+                app:tint="#CCCCCC" />
 
                 <TextView
                     android:layout_width="wrap_content"

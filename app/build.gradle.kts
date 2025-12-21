@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -6,6 +8,18 @@ plugins {
 android {
     namespace = "com.example.hello"
     compileSdk = 34
+    
+    // 启用BuildConfig功能
+    buildFeatures {
+        buildConfig = true
+    }
+
+    // 从local.properties读取配置
+    val localProperties = Properties()
+    val localPropertiesFile = rootProject.file("local.properties")
+    if (localPropertiesFile.exists()) {
+        localPropertiesFile.inputStream().use { localProperties.load(it) }
+    }
 
     defaultConfig {
         applicationId = "com.example.hello"
@@ -13,6 +27,9 @@ android {
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
+
+        // 从环境变量注入APP_SECRET到BuildConfig
+        buildConfigField("String", "APP_SECRET", "\"${System.getenv("APP_SECRET") ?: localProperties.getProperty("APP_SECRET", "")}\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
