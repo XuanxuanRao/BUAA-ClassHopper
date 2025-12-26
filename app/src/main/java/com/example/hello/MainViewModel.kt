@@ -9,6 +9,8 @@ import androidx.lifecycle.viewModelScope
 import com.example.hello.model.Course
 import com.example.hello.service.ApiService
 import com.example.hello.service.ChatWebSocketService
+import com.example.hello.command.CommandDispatcher
+import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import okio.ByteString
@@ -48,6 +50,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val ALLOW_INSECURE_TLS = true
     private val chatWebSocketService = ChatWebSocketService(allowInsecureForDebug = ALLOW_INSECURE_TLS)
 
+    private val commandDispatcher = CommandDispatcher()
+    private val gson = Gson()
+
     // Data
     private var currentUserId: String? = null
     private var currentSessionId: String? = null
@@ -69,6 +74,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
                         override fun onMessage(text: String) {
                             Log.d("ChatWS", "Text message: $text")
+                            viewModelScope.launch(Dispatchers.IO) {
+                                val result = commandDispatcher.dispatch(text)
+                                if (result != null) {
+                                    val responseJson = gson.toJson(result)
+                                    chatWebSocketService.send(responseJson)
+                                }
+                            }
                         }
 
                         override fun onMessage(bytes: ByteString) {
