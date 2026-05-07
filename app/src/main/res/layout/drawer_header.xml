@@ -2,36 +2,39 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:padding="16dp"
+    android:background="@android:color/white"
     android:gravity="center"
-    android:background="@android:color/white">
+    android:orientation="vertical"
+    android:padding="20dp">
 
-    <!-- 用户头像 -->
     <ImageView
         android:id="@+id/avatar_image"
         android:layout_width="80dp"
         android:layout_height="80dp"
         android:scaleType="centerCrop"
-        android:background="@android:drawable/ic_menu_gallery"
-        android:layout_marginBottom="8dp" />
+        android:src="@android:drawable/ic_menu_gallery" />
 
-    <!-- 学生ID -->
     <TextView
         android:id="@+id/student_id_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
         android:text="--"
+        android:textColor="@color/home_text_primary"
         android:textSize="16sp"
-        android:textColor="@android:color/black"
-        android:layout_marginBottom="4dp" />
+        android:textStyle="bold" />
 
-    <!-- 认证状态 -->
     <TextView
         android:id="@+id/verified_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:background="@drawable/bg_home_input"
+        android:paddingStart="12dp"
+        android:paddingTop="6dp"
+        android:paddingEnd="12dp"
+        android:paddingBottom="6dp"
         android:text="未认证"
-        android:textSize="14sp"
-        android:textColor="@android:color/darker_gray" />
+        android:textColor="@color/home_text_secondary"
+        android:textSize="13sp" />
 </LinearLayout>

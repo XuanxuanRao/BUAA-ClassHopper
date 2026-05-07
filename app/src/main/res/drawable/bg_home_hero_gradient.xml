@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <corners
+                android:bottomLeftRadius="28dp"
+                android:bottomRightRadius="28dp" />
+            <gradient
+                android:angle="0"
+                android:endColor="@color/home_hero_end"
+                android:startColor="@color/home_hero_start" />
+        </shape>
+    </item>
+    <item
+        android:gravity="top|end"
+        android:right="-36dp"
+        android:top="-28dp">
+        <shape android:shape="oval">
+            <size
+                android:width="180dp"
+                android:height="180dp" />
+            <solid android:color="@color/home_hero_glow" />
+        </shape>
+    </item>
+</layer-list>

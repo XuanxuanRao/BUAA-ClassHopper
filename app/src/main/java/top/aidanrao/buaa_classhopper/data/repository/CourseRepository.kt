@@ -73,11 +73,11 @@ class CourseRepository @Inject constructor(
     suspend fun getCourseScheduleFallback(dateStr: String): Result<List<CourseDto>> {
         return withContext(Dispatchers.IO) {
             try {
-                val token = tokenManager.getValidToken()
-                if (token == null) {
-                    return@withContext Result.error(Exception("No token"), "未获取到授权令牌")
-                }
-                
+                val token = tokenManager.getValidToken() ?: return@withContext Result.error(
+                    Exception("No token"),
+                    "未获取到授权令牌"
+                )
+
                 val formattedDate = if (dateStr.length == 8) {
                     "${dateStr.take(4)}-${dateStr.substring(4, 6)}-${dateStr.substring(6, 8)}"
                 } else {
@@ -138,11 +138,11 @@ class CourseRepository @Inject constructor(
     suspend fun signClassFallback(courseId: Int): Result<Unit> {
         return withContext(Dispatchers.IO) {
             try {
-                val token = tokenManager.getValidToken()
-                if (token == null) {
-                    return@withContext Result.error(Exception("No token"), "未获取到授权令牌")
-                }
-                
+                val token = tokenManager.getValidToken() ?: return@withContext Result.error(
+                    Exception("No token"),
+                    "未获取到授权令牌"
+                )
+
                 val response = fallbackApi.signClass(courseId, token)
                 if (response.isSuccessful) {
                     Result.success(Unit)

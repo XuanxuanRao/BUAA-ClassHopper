@@ -22,10 +22,8 @@ import top.aidanrao.buaa_classhopper.command.CommandDispatcher
 import top.aidanrao.buaa_classhopper.data.model.Result
 import top.aidanrao.buaa_classhopper.data.model.dto.CourseDto
 import top.aidanrao.buaa_classhopper.data.model.dto.UserInfoDto
-import top.aidanrao.buaa_classhopper.data.repository.AnnouncementRepository
 import top.aidanrao.buaa_classhopper.data.repository.AuthRepository
 import top.aidanrao.buaa_classhopper.data.repository.CourseRepository
-import top.aidanrao.buaa_classhopper.data.repository.QRCodeRepository
 import top.aidanrao.buaa_classhopper.data.repository.UserRepository
 import top.aidanrao.buaa_classhopper.service.ChatWebSocketService
 import java.lang.reflect.Type
@@ -37,9 +35,7 @@ import javax.inject.Inject
 class MainViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val userRepository: UserRepository,
-    private val announcementRepository: AnnouncementRepository,
     private val courseRepository: CourseRepository,
-    private val qrCodeRepository: QRCodeRepository,
     private val commandDispatcher: CommandDispatcher,
     private val chatWebSocketService: ChatWebSocketService
 ) : ViewModel() {
@@ -63,16 +59,6 @@ class MainViewModel @Inject constructor(
     val toastMessage: LiveData<String> = _toastMessage
 
     private var isRequestInProgress = false
-
-    private val _webSocketStatus = MutableLiveData<WebSocketStatus>()
-    val webSocketStatus: LiveData<WebSocketStatus> = _webSocketStatus
-
-    enum class WebSocketStatus {
-        CONNECTED, CONNECTING, DISCONNECTED
-    }
-
-    private var currentUserId: String? = null
-    private var currentSessionId: String? = null
     
     private val gson: Gson = GsonBuilder()
         .registerTypeAdapter(LocalDateTime::class.java, LocalDateTimeSerializer())
@@ -83,7 +69,6 @@ class MainViewModel @Inject constructor(
     val userProfile: LiveData<UserInfoDto> = _userProfile
 
     init {
-        _webSocketStatus.value = WebSocketStatus.CONNECTING
         connectWebSocket()
     }
 
@@ -94,9 +79,7 @@ class MainViewModel @Inject constructor(
                 Log.d("MainViewModel", "获取token成功: $token")
                 withContext(Dispatchers.Main) {
                     chatWebSocketService.connect(token, object : ChatWebSocketService.Listener {
-                        override fun onOpen() {
-                            _webSocketStatus.postValue(WebSocketStatus.CONNECTED)
-                        }
+                        override fun onOpen() = Unit
 
                         override fun onMessage(text: String) {
                             Log.d("ChatWS", "Text message: $text")
@@ -113,26 +96,17 @@ class MainViewModel @Inject constructor(
                             Log.d("ChatWS", "Binary message: ${bytes.hex()}")
                         }
 
-                        override fun onClosing(code: Int, reason: String) {
-                            _webSocketStatus.postValue(WebSocketStatus.DISCONNECTED)
-                        }
+                        override fun onClosing(code: Int, reason: String) = Unit
 
-                        override fun onClosed(code: Int, reason: String) {
-                            _webSocketStatus.postValue(WebSocketStatus.DISCONNECTED)
-                        }
+                        override fun onClosed(code: Int, reason: String) = Unit
 
-                        override fun onFailure(error: String) {
-                            _webSocketStatus.postValue(WebSocketStatus.DISCONNECTED)
-                        }
+                        override fun onFailure(error: String) = Unit
 
-                        override fun onReconnectAttempt(attempt: Int, delayMs: Long) {
-                            _webSocketStatus.postValue(WebSocketStatus.CONNECTING)
-                        }
+                        override fun onReconnectAttempt(attempt: Int, delayMs: Long) = Unit
                     })
                 }
             } else {
                 Log.e("MainViewModel", "获取token失败")
-                _webSocketStatus.postValue(WebSocketStatus.DISCONNECTED)
             }
         }
     }
@@ -153,14 +127,10 @@ class MainViewModel @Inject constructor(
         _isEmpty.postValue(false)
 
         viewModelScope.launch {
-            val loginResult = courseRepository.login(studentId)
-            
-            when (loginResult) {
+            when (val loginResult = courseRepository.login(studentId)) {
                 is Result.Success -> {
                     val loginData = loginResult.data.result
                     if (loginData != null) {
-                        currentUserId = loginData.id
-                        currentSessionId = loginData.sessionId
                         _userInfo.postValue("${loginData.realName} - ${loginData.academyName}")
                         
                         val dateStr = date.replace("-", "")
