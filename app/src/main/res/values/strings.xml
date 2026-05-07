@@ -2,6 +2,12 @@
     <string name="app_name">BUAA-ClassHopper</string>
     <string name="iclass_fallback_config_desc">当本机不处于北航校园网下，将无法获取课表和打卡，此时将使用系统服务器完成相关操作</string>
     <string name="iclass_fallback_config_name">获取课表和打卡的备选方案</string>
+    <string name="iclass_vpn_config_name">通过北航 VPN 访问 iClass</string>
+    <string name="iclass_vpn_config_desc">开启后，课表与签到将通过 d.buaa.edu.cn 访问 iClass，适用于校外网络</string>
+    <string name="iclass_vpn_status_not_logged_in">VPN 会话未登录，请先使用 SSO 登录</string>
+    <string name="iclass_vpn_status_logged_in">VPN 会话已登录</string>
+    <string name="iclass_vpn_login_button">通过 SSO 登录 VPN</string>
+    <string name="iclass_vpn_relogin_button">重新登录 VPN</string>
     <string name="app_brief_intro">和每节课前的打卡或扫码签到彻底告别，轻轻一点即可完成智慧教室签到，让你专注于真正重要的学习与研究。</string>
     <string name="app_version">Version 1.0</string>
     <string name="splash_skip">跳过</string>

@@ -9,22 +9,33 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.edit
+import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.drawerlayout.widget.DrawerLayout
+import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
-import top.aidanrao.buaa_classhopper.viewmodel.MainViewModel
-import top.aidanrao.buaa_classhopper.R
 import com.google.android.material.navigation.NavigationView
-import top.aidanrao.buaa_classhopper.NavigationManager
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import top.aidanrao.buaa_classhopper.NavigationManager
+import top.aidanrao.buaa_classhopper.R
 import top.aidanrao.buaa_classhopper.data.model.dto.UserInfoDto
 import top.aidanrao.buaa_classhopper.ui.CourseTableRenderer
-import top.aidanrao.buaa_classhopper.ui.WebSocketStatusIndicator
+import top.aidanrao.buaa_classhopper.ui.IClassAvailabilityIndicator
+import top.aidanrao.buaa_classhopper.viewmodel.MainViewModel
 import java.text.SimpleDateFormat
 import java.util.*
+import javax.inject.Inject
+import javax.inject.Named
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
@@ -35,8 +46,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var calendarIcon: ImageView
     private lateinit var emptyStateLayout: LinearLayout
     private lateinit var userInfoTextView: TextView
-    private lateinit var webSocketStatusIcon: ImageView
-    private lateinit var webSocketStatusIndicator: WebSocketStatusIndicator
+    private lateinit var statusIndicatorIcon: ImageView
+    private lateinit var iclassAvailabilityIndicator: IClassAvailabilityIndicator
     private lateinit var courseTableRenderer: CourseTableRenderer
     private lateinit var scanButton: ImageButton
     private lateinit var scanLauncher: ActivityResultLauncher<ScanOptions>
@@ -46,9 +57,15 @@ class MainActivity : AppCompatActivity() {
     private lateinit var hamburgerButton: ImageButton
 
     private val viewModel: MainViewModel by viewModels()
+    @Inject
+    @Named("authClient")
+    lateinit var iclassStatusHttpClient: OkHttpClient
+    private var iclassStatusPollingJob: Job? = null
 
     private val PREFS_NAME = "ClassHopperPrefs"
     private val KEY_STUDENT_ID = "student_id"
+    private val ICLASS_STATUS_URL = "https://iclass.buaa.edu.cn:8346/"
+    private val ICLASS_STATUS_POLL_INTERVAL_MS = 30_000L
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -79,6 +96,7 @@ class MainActivity : AppCompatActivity() {
         val sharedPreferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
         val savedStudentId = sharedPreferences.getString(KEY_STUDENT_ID, "22370000")
         editTextId.setText(savedStudentId)
+        applyIdentityLine(studentId = savedStudentId, rawName = null)
         
         // 设置默认日期
         val currentDate = Calendar.getInstance()
@@ -94,13 +112,13 @@ class MainActivity : AppCompatActivity() {
         calendarIcon = findViewById(R.id.calendarIcon)
         emptyStateLayout = findViewById(R.id.emptyStateLayout)
         userInfoTextView = findViewById(R.id.userInfoTextView)
-        webSocketStatusIcon = findViewById(R.id.webSocketStatusIcon)
+        statusIndicatorIcon = findViewById(R.id.webSocketStatusIcon)
         hamburgerButton = findViewById(R.id.hamburger_button)
         drawerLayout = findViewById(R.id.drawer_layout)
         navView = findViewById(R.id.nav_view)
         scanButton = findViewById(R.id.scanButton)
 
-        webSocketStatusIndicator = WebSocketStatusIndicator(this, webSocketStatusIcon)
+        iclassAvailabilityIndicator = IClassAvailabilityIndicator(this, statusIndicatorIcon)
         
         courseTableRenderer = CourseTableRenderer(
             context = this,
@@ -189,7 +207,10 @@ class MainActivity : AppCompatActivity() {
         }
 
         viewModel.userInfo.observe(this) { info ->
-            userInfoTextView.text = info
+            applyIdentityLine(
+                studentId = editTextId.text?.toString(),
+                rawName = info
+            )
         }
 
         viewModel.isEmpty.observe(this) { isEmpty ->
@@ -203,20 +224,25 @@ class MainActivity : AppCompatActivity() {
         viewModel.toastMessage.observe(this) { msg ->
             Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
         }
-
-        viewModel.webSocketStatus.observe(this) { status ->
-            when (status) {
-                MainViewModel.WebSocketStatus.CONNECTED -> webSocketStatusIndicator.showConnected()
-                MainViewModel.WebSocketStatus.CONNECTING -> webSocketStatusIndicator.showConnecting()
-                MainViewModel.WebSocketStatus.DISCONNECTED -> webSocketStatusIndicator.showDisconnected()
-                else -> webSocketStatusIndicator.showDisconnected()
-            }
-        }
         
         // 观察用户信息变化
         viewModel.userProfile.observe(this) { userInfo ->
+            applyIdentityLine(
+                studentId = userInfo.studentId,
+                rawName = userInfo.username
+            )
             updateDrawerHeader(userInfo)
         }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        startIClassAvailabilityPolling()
+    }
+
+    override fun onStop() {
+        stopIClassAvailabilityPolling()
+        super.onStop()
     }
     
     override fun onPause() {
@@ -285,6 +311,62 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun applyIdentityLine(studentId: String?, rawName: String?) {
+        val cleanedStudentId = studentId?.trim().orEmpty()
+        val cleanedName = rawName
+            ?.substringBefore(" - ")
+            ?.trim()
+            .orEmpty()
+
+        userInfoTextView.text = listOf(cleanedStudentId, cleanedName)
+            .filter { it.isNotEmpty() }
+            .joinToString("  ")
+            .ifEmpty { "学号  姓名" }
+    }
+
+    private fun startIClassAvailabilityPolling() {
+        if (iclassStatusPollingJob?.isActive == true) return
+
+        iclassStatusPollingJob = lifecycleScope.launch {
+            while (isActive) {
+                updateIClassAvailabilityIndicator()
+                delay(ICLASS_STATUS_POLL_INTERVAL_MS)
+            }
+        }
+    }
+
+    private fun stopIClassAvailabilityPolling() {
+        iclassStatusPollingJob?.cancel()
+        iclassStatusPollingJob = null
+    }
+
+    private suspend fun updateIClassAvailabilityIndicator() {
+        val isReachable = kotlinx.coroutines.withContext(Dispatchers.IO) {
+            checkIClassAvailability()
+        }
+
+        if (isReachable) {
+            iclassAvailabilityIndicator.showReachable()
+        } else {
+            iclassAvailabilityIndicator.showUnreachable()
+        }
+    }
+
+    private fun checkIClassAvailability(): Boolean {
+        val request = Request.Builder()
+            .url(ICLASS_STATUS_URL)
+            .head()
+            .build()
+
+        return try {
+            iclassStatusHttpClient.newCall(request).execute().use { response ->
+                response.code in 200..499
+            }
+        } catch (_: Exception) {
+            false
+        }
+    }
+
     private fun updateDrawerHeader(userInfo: UserInfoDto) {
         val footerView = findViewById<View>(R.id.drawer_footer) ?: return
         
@@ -297,7 +379,13 @@ class MainActivity : AppCompatActivity() {
         
         // 设置认证状态
         verifiedText.text = if (userInfo.verified) "已认证" else "未认证"
-        verifiedText.setTextColor(if (userInfo.verified) resources.getColor(android.R.color.holo_green_dark) else resources.getColor(android.R.color.darker_gray))
+        verifiedText.setTextColor(
+            if (userInfo.verified) {
+                ContextCompat.getColor(this, android.R.color.holo_green_dark)
+            } else {
+                ContextCompat.getColor(this, android.R.color.darker_gray)
+            }
+        )
         
         // 加载头像
         if (!userInfo.avatar.isNullOrEmpty()) {

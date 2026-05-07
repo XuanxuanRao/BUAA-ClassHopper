@@ -11,5 +11,4 @@
 
     <color name="ws_connected">#81C784</color>
     <color name="ws_disconnected">#9E9E9E</color>
-    <color name="ws_connecting">#FFB74D</color>
 </resources>

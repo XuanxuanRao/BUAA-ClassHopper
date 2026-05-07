@@ -14,6 +14,8 @@ import top.aidanrao.buaa_classhopper.data.api.interceptor.LoggingInterceptor
 import top.aidanrao.buaa_classhopper.data.api.interceptor.SslTrustManager
 import top.aidanrao.buaa_classhopper.data.api.interceptor.TokenAuthenticator
 import top.aidanrao.buaa_classhopper.data.repository.TokenManager
+import top.aidanrao.buaa_classhopper.data.vpn.VpnCookieJar
+import top.aidanrao.buaa_classhopper.data.vpn.VpnEndpoints
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import dagger.Module
@@ -34,8 +36,12 @@ import javax.inject.Singleton
 object NetworkModule {
     
     private const val BASE_URL = "http://39.105.96.112/api/"
-    private const val ICLASS_BASE_URL = "https://iclass.buaa.edu.cn:8346/"
+    private const val ICLASS_BASE_URL = VpnEndpoints.ICLASS_DIRECT_8347
     private const val FALLBACK_BASE_URL = "https://101.42.43.228/"
+
+    const val CLIENT_VPN = "vpnClient"
+    const val API_ICLASS_DIRECT = "iclassDirect"
+    const val API_ICLASS_VPN = "iclassVpn"
 
     @Provides
     @Singleton
@@ -110,9 +116,40 @@ object NetworkModule {
 
     @Provides
     @Singleton
+    @Named(CLIENT_VPN)
+    fun provideVpnOkHttpClient(
+        loggingInterceptor: LoggingInterceptor,
+        vpnCookieJar: VpnCookieJar
+    ): OkHttpClient {
+        return OkHttpClient.Builder()
+            .sslSocketFactory(SslTrustManager.getUnsafeSslSocketFactory(), SslTrustManager.getUnsafeTrustManager())
+            .hostnameVerifier { _, _ -> true }
+            .cookieJar(vpnCookieJar)
+            .addInterceptor(loggingInterceptor)
+            .build()
+    }
+
+    @Provides
+    @Singleton
+    @Named(API_ICLASS_DIRECT)
     fun provideIclassApi(gson: Gson, okHttpClient: OkHttpClient): IclassApi {
         return Retrofit.Builder()
             .baseUrl(ICLASS_BASE_URL)
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create(gson))
+            .build()
+            .create(IclassApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    @Named(API_ICLASS_VPN)
+    fun provideIclassVpnApi(
+        gson: Gson,
+        @Named(CLIENT_VPN) okHttpClient: OkHttpClient
+    ): IclassApi {
+        return Retrofit.Builder()
+            .baseUrl(VpnEndpoints.ICLASS_VPN_8347)
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create(gson))
             .build()

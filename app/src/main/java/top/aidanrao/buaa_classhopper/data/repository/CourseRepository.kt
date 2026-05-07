@@ -8,19 +8,24 @@ import top.aidanrao.buaa_classhopper.data.model.Result
 import top.aidanrao.buaa_classhopper.data.model.dto.CourseDto
 import top.aidanrao.buaa_classhopper.data.model.dto.FallbackCourseDto
 import top.aidanrao.buaa_classhopper.data.model.dto.IclassLoginResponse
+import top.aidanrao.buaa_classhopper.data.vpn.VpnPreferences
+import top.aidanrao.buaa_classhopper.di.NetworkModule
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
+import javax.inject.Named
 import javax.inject.Singleton
 
 @Singleton
 class CourseRepository @Inject constructor(
-    private val iclassApi: IclassApi,
+    @Named(NetworkModule.API_ICLASS_DIRECT) private val iclassDirectApi: IclassApi,
+    @Named(NetworkModule.API_ICLASS_VPN) private val iclassVpnApi: IclassApi,
     private val fallbackApi: FallbackApi,
     private val tokenManager: TokenManager,
+    private val vpnPreferences: VpnPreferences,
     @ApplicationContext private val context: Context
 ) {
     companion object {
@@ -31,10 +36,13 @@ class CourseRepository @Inject constructor(
 
     private val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
 
+    private fun iclassApi(): IclassApi =
+        if (vpnPreferences.isVpnEnabled) iclassVpnApi else iclassDirectApi
+
     suspend fun login(studentId: String): Result<IclassLoginResponse> {
         return withContext(Dispatchers.IO) {
             try {
-                val response = iclassApi.login(phone = studentId)
+                val response = iclassApi().login(phone = studentId)
                 if (response.result != null) {
                     Result.success(response)
                 } else {
@@ -54,7 +62,7 @@ class CourseRepository @Inject constructor(
     ): Result<List<CourseDto>> {
         return withContext(Dispatchers.IO) {
             try {
-                val response = iclassApi.getCourseSchedule(dateStr, userId, sessionId)
+                val response = iclassApi().getCourseSchedule(dateStr, userId, sessionId)
                 if (response.status == "2" || response.result.isNullOrEmpty()) {
                     Result.success(emptyList())
                 } else {
@@ -73,11 +81,11 @@ class CourseRepository @Inject constructor(
     suspend fun getCourseScheduleFallback(dateStr: String): Result<List<CourseDto>> {
         return withContext(Dispatchers.IO) {
             try {
-                val token = tokenManager.getValidToken()
-                if (token == null) {
-                    return@withContext Result.error(Exception("No token"), "未获取到授权令牌")
-                }
-                
+                val token = tokenManager.getValidToken() ?: return@withContext Result.error(
+                    Exception("No token"),
+                    "未获取到授权令牌"
+                )
+
                 val formattedDate = if (dateStr.length == 8) {
                     "${dateStr.take(4)}-${dateStr.substring(4, 6)}-${dateStr.substring(6, 8)}"
                 } else {
@@ -115,7 +123,7 @@ class CourseRepository @Inject constructor(
                 )
                 val timestamp = System.currentTimeMillis()
                 
-                val response = iclassApi.signClass(courseId, timestamp, loginData.id)
+                val response = iclassApi().signClass(courseId, timestamp, loginData.id)
                 if (response.result != null) {
                     Result.success(Unit)
                 } else {
@@ -138,11 +146,11 @@ class CourseRepository @Inject constructor(
     suspend fun signClassFallback(courseId: Int): Result<Unit> {
         return withContext(Dispatchers.IO) {
             try {
-                val token = tokenManager.getValidToken()
-                if (token == null) {
-                    return@withContext Result.error(Exception("No token"), "未获取到授权令牌")
-                }
-                
+                val token = tokenManager.getValidToken() ?: return@withContext Result.error(
+                    Exception("No token"),
+                    "未获取到授权令牌"
+                )
+
                 val response = fallbackApi.signClass(courseId, token)
                 if (response.isSuccessful) {
                     Result.success(Unit)
