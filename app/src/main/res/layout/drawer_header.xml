@@ -1,40 +1,39 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:background="@android:color/white"
-    android:gravity="center"
+    android:layout_height="140dp"
+    android:background="@drawable/bg_drawer_header"
+    android:gravity="center_horizontal"
     android:orientation="vertical"
     android:padding="20dp">
 
     <ImageView
         android:id="@+id/avatar_image"
-        android:layout_width="80dp"
-        android:layout_height="80dp"
-        android:scaleType="centerCrop"
-        android:src="@android:drawable/ic_menu_gallery" />
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        android:scaleType="centerInside"
+        android:src="@drawable/ic_home_student" />
 
     <TextView
         android:id="@+id/student_id_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
+        android:layout_marginTop="10dp"
         android:text="--"
-        android:textColor="@color/home_text_primary"
-        android:textSize="16sp"
-        android:textStyle="bold" />
+        android:textColor="@color/home_text_on_hero"
+        android:textSize="14sp" />
 
     <TextView
         android:id="@+id/verified_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="6dp"
-        android:background="@drawable/bg_home_input"
+        android:background="@drawable/bg_drawer_verified_badge"
         android:paddingStart="12dp"
-        android:paddingTop="6dp"
+        android:paddingTop="4dp"
         android:paddingEnd="12dp"
-        android:paddingBottom="6dp"
-        android:text="未认证"
-        android:textColor="@color/home_text_secondary"
-        android:textSize="13sp" />
+        android:paddingBottom="4dp"
+        android:text="未认证 / 点击登录"
+        android:textColor="@color/home_text_on_hero"
+        android:textSize="12sp" />
 </LinearLayout>

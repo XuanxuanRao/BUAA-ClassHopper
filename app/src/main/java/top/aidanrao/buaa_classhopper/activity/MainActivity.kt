@@ -102,6 +102,13 @@ class MainActivity : AppCompatActivity() {
         val currentDate = Calendar.getInstance()
         val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
         textViewDate.text = dateFormat.format(currentDate.time)
+        
+        // 如果学号和日期都已填充，自动加载课表
+        val studentId = editTextId.text.toString()
+        val date = textViewDate.text.toString()
+        if (studentId.isNotEmpty() && date.isNotEmpty()) {
+            viewModel.getClassInfo(studentId, date)
+        }
     }
 
     private fun initViews() {
@@ -368,43 +375,42 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateDrawerHeader(userInfo: UserInfoDto) {
-        val footerView = findViewById<View>(R.id.drawer_footer) ?: return
+        val headerView = findViewById<View>(R.id.drawer_header) ?: return
         
-        val avatarImage = footerView.findViewById<ImageView>(R.id.avatar_image)
-        val studentIdText = footerView.findViewById<TextView>(R.id.student_id_text)
-        val verifiedText = footerView.findViewById<TextView>(R.id.verified_text)
+        val avatarImage = headerView.findViewById<ImageView>(R.id.avatar_image)
+        val studentIdText = headerView.findViewById<TextView>(R.id.student_id_text)
+        val verifiedText = headerView.findViewById<TextView>(R.id.verified_text)
         
-        // 设置学生ID
         studentIdText.text = userInfo.studentId
         
-        // 设置认证状态
-        verifiedText.text = if (userInfo.verified) "已认证" else "未认证"
+        verifiedText.text = if (userInfo.verified) "已认证" else "未认证 / 点击登录"
         verifiedText.setTextColor(
             if (userInfo.verified) {
-                ContextCompat.getColor(this, android.R.color.holo_green_dark)
+                ContextCompat.getColor(this, android.R.color.holo_green_light)
             } else {
-                ContextCompat.getColor(this, android.R.color.darker_gray)
+                ContextCompat.getColor(this, R.color.home_text_on_hero)
             }
         )
         
-        // 加载头像
         if (!userInfo.avatar.isNullOrEmpty()) {
-            // 使用Glide或其他图片加载库加载头像
             try {
                 Glide.with(this)
                     .load(userInfo.avatar)
                     .circleCrop()
-                    .placeholder(android.R.drawable.ic_menu_gallery)
-                    .error(android.R.drawable.ic_menu_gallery)
+                    .placeholder(R.drawable.ic_home_student)
+                    .error(R.drawable.ic_home_student)
                     .into(avatarImage)
             } catch (e: Exception) {
                 e.printStackTrace()
-                // 如果Glide出现异常，使用默认头像
-                avatarImage.setImageResource(android.R.drawable.ic_menu_gallery)
+                avatarImage.setImageResource(R.drawable.ic_home_student)
             }
         } else {
-            // 使用默认头像
-            avatarImage.setImageResource(android.R.drawable.ic_menu_gallery)
+            avatarImage.setImageResource(R.drawable.ic_home_student)
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        navView.setCheckedItem(R.id.menu_home)
     }
 }

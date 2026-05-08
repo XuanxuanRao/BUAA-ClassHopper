@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- 导航菜单 -->
     <group android:checkableBehavior="single">
         <item
             android:id="@+id/menu_home"
-            android:icon="@android:drawable/ic_menu_mylocation"
+            android:icon="@drawable/ic_home_menu"
             android:title="首页" />
         <item
             android:id="@+id/menu_announcement"
@@ -14,6 +13,14 @@
             android:id="@+id/menu_lab"
             android:icon="@drawable/ic_lab_flask"
             android:title="实验室" />
+    </group>
+
+    <item android:id="@+id/menu_divider"
+        android:title=""
+        android:enabled="false"
+        android:visible="false" />
+
+    <group android:id="@+id/group_settings" android:checkableBehavior="single">
         <item
             android:id="@+id/menu_settings"
             android:icon="@android:drawable/ic_menu_manage"
