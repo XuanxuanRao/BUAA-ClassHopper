@@ -13,4 +13,9 @@
     <style name="Theme.Hello" parent="Base.Theme.Hello" />
 
     <style name="Theme.Hello.NoActionBar" parent="Base.Theme.Hello" />
+
+    <style name="DrawerItemTextAppearance" parent="TextAppearance.AppCompat">
+        <item name="android:textSize">15sp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+    </style>
 </resources>

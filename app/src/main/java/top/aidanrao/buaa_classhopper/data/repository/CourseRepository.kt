@@ -9,6 +9,7 @@ import top.aidanrao.buaa_classhopper.data.model.dto.CourseDto
 import top.aidanrao.buaa_classhopper.data.model.dto.FallbackCourseDto
 import top.aidanrao.buaa_classhopper.data.model.dto.IclassLoginResponse
 import top.aidanrao.buaa_classhopper.data.vpn.VpnPreferences
+import top.aidanrao.buaa_classhopper.data.vpn.VpnSessionExpiredException
 import top.aidanrao.buaa_classhopper.di.NetworkModule
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -32,6 +33,7 @@ class CourseRepository @Inject constructor(
         private const val TAG = "CourseRepository"
         private const val PREFS_NAME = "course_checkin_settings"
         private const val KEY_FALLBACK_ENABLED = "fallback_enabled"
+        const val VPN_SESSION_EXPIRED_MESSAGE = "VPN 会话已失效，请到设置中重新通过 SSO 登录"
     }
 
     private val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
@@ -49,6 +51,8 @@ class CourseRepository @Inject constructor(
                     val errorMsg = response.ERRMSG ?: "登录失败"
                     Result.error(Exception(errorMsg), errorMsg)
                 }
+            } catch (e: VpnSessionExpiredException) {
+                Result.error(e, VPN_SESSION_EXPIRED_MESSAGE)
             } catch (e: Exception) {
                 Result.error(e, "登录失败: ${e.message}")
             }
@@ -68,6 +72,8 @@ class CourseRepository @Inject constructor(
                 } else {
                     Result.success(response.result)
                 }
+            } catch (e: VpnSessionExpiredException) {
+                Result.error(e, VPN_SESSION_EXPIRED_MESSAGE)
             } catch (e: Exception) {
                 if (isFallbackEnabled()) {
                     getCourseScheduleFallback(dateStr)
@@ -111,6 +117,11 @@ class CourseRepository @Inject constructor(
             try {
                 val loginResult = login(studentId)
                 if (loginResult.isError) {
+                    // VPN 失效时直接把原始错误抛给用户，不再 fallback
+                    val cause = (loginResult as? Result.Error)?.exception
+                    if (cause is VpnSessionExpiredException) {
+                        return@withContext Result.error(cause, VPN_SESSION_EXPIRED_MESSAGE)
+                    }
                     if (isFallbackEnabled()) {
                         return@withContext signClassFallback(courseId)
                     }
@@ -133,6 +144,8 @@ class CourseRepository @Inject constructor(
                         Result.error(Exception(response.msg), response.msg ?: "签到失败")
                     }
                 }
+            } catch (e: VpnSessionExpiredException) {
+                Result.error(e, VPN_SESSION_EXPIRED_MESSAGE)
             } catch (e: Exception) {
                 if (isFallbackEnabled()) {
                     signClassFallback(courseId)
