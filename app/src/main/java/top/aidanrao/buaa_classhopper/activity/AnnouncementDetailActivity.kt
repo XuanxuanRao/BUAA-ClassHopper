@@ -8,6 +8,9 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.resource.bitmap.CenterCrop
+import com.bumptech.glide.load.resource.bitmap.RoundedCorners
+import com.bumptech.glide.request.RequestOptions
 import top.aidanrao.buaa_classhopper.R
 import top.aidanrao.buaa_classhopper.viewmodel.AnnouncementViewModel
 import dagger.hilt.android.AndroidEntryPoint
@@ -86,35 +89,47 @@ class AnnouncementDetailActivity : AppCompatActivity() {
     private fun displayAnnouncementDetail(title: String, createTime: String, cover: String?, content: String?, posterUsername: String?, posterAvatar: String?) {
         titleTextView.text = title
         timeTextView.text = createTime.substringBefore('T')
-        
+
         if (!cover.isNullOrEmpty()) {
+            coverImageView.visibility = View.VISIBLE
             try {
                 Glide.with(this)
                     .load(cover)
+                    .apply(
+                        RequestOptions().transform(
+                            CenterCrop(),
+                            RoundedCorners((resources.displayMetrics.density * 14).toInt())
+                        )
+                    )
                     .placeholder(android.R.drawable.ic_menu_gallery)
                     .error(android.R.drawable.ic_menu_gallery)
                     .into(coverImageView)
             } catch (e: Exception) {
                 e.printStackTrace()
             }
+        } else {
+            coverImageView.visibility = View.GONE
         }
-        
+
         contentTextView.text = content ?: ""
-        
-        authorNameTextView.text = "发布者: ${posterUsername ?: "未知"}"
+
+        authorNameTextView.text = posterUsername ?: "未知"
         authorNameTextView.visibility = View.VISIBLE
-        
+
         authorAvatarImageView.visibility = View.VISIBLE
         if (!posterAvatar.isNullOrEmpty()) {
             try {
                 Glide.with(this)
                     .load(posterAvatar)
-                    .placeholder(android.R.drawable.ic_menu_gallery)
-                    .error(android.R.drawable.ic_menu_gallery)
+                    .circleCrop()
+                    .placeholder(R.drawable.ic_home_student)
+                    .error(R.drawable.ic_home_student)
                     .into(authorAvatarImageView)
             } catch (e: Exception) {
                 e.printStackTrace()
             }
+        } else {
+            authorAvatarImageView.setImageResource(R.drawable.ic_home_student)
         }
     }
 

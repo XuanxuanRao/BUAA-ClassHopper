@@ -2,52 +2,74 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:layout_marginStart="16dp"
+    android:layout_marginTop="8dp"
+    android:layout_marginEnd="16dp"
+    android:layout_marginBottom="8dp"
+    android:background="@drawable/bg_announcement_card_ripple"
     android:orientation="horizontal"
-    android:padding="16dp">
+    android:padding="14dp">
 
     <ImageView
         android:id="@+id/announcement_cover"
-        android:layout_width="80dp"
-        android:layout_height="80dp"
+        android:layout_width="84dp"
+        android:layout_height="84dp"
+        android:background="@drawable/bg_announcement_cover"
+        android:clipToOutline="true"
         android:scaleType="centerCrop"
-        android:src="@android:drawable/ic_menu_gallery"
-        android:layout_marginRight="16dp" />
+        android:src="@android:drawable/ic_menu_gallery" />
 
     <LinearLayout
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
+        android:layout_height="84dp"
+        android:layout_marginStart="14dp"
         android:layout_weight="1"
-        android:orientation="vertical"
-        android:gravity="center_vertical">
+        android:gravity="center_vertical"
+        android:orientation="vertical">
 
         <TextView
             android:id="@+id/announcement_title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:fontFamily="sans-serif-medium"
+            android:maxLines="2"
             android:text="公告标题"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:maxLines="1"
-            android:ellipsize="end" />
+            android:textColor="@color/home_text_primary"
+            android:textSize="16sp" />
 
-        <TextView
-            android:id="@+id/announcement_time"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="2025-05-05"
-            android:textSize="12sp"
-            android:textColor="@android:color/darker_gray"
-            android:layout_marginTop="4dp" />
+            android:layout_marginTop="10dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
 
-        <TextView
-            android:id="@+id/announcement_author"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="发布者: xuan"
-            android:textSize="12sp"
-            android:textColor="@android:color/darker_gray"
-            android:layout_marginTop="2dp" />
+            <TextView
+                android:id="@+id/announcement_time"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_announcement_time_chip"
+                android:paddingStart="10dp"
+                android:paddingTop="4dp"
+                android:paddingEnd="10dp"
+                android:paddingBottom="4dp"
+                android:text="2025-05-05"
+                android:textColor="@color/home_table_text"
+                android:textSize="11sp" />
 
+            <TextView
+                android:id="@+id/announcement_author"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:text="发布者: xuan"
+                android:textColor="@color/home_text_secondary"
+                android:textSize="11sp" />
+        </LinearLayout>
     </LinearLayout>
 
 </LinearLayout>

@@ -33,4 +33,7 @@
     <color name="home_table_row_odd">#F8FBFF</color>
     <color name="home_empty_tint">#B1BFD6</color>
     <color name="home_empty_background">#F8FAFF</color>
+
+    <color name="drawer_item_selected_bg">#E8EEFF</color>
+    <color name="drawer_footer_bg">#F7FAFF</color>
 </resources>

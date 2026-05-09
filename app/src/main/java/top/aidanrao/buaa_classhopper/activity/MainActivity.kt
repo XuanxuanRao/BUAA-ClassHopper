@@ -1,12 +1,14 @@
 package top.aidanrao.buaa_classhopper.activity
 
 import android.app.DatePickerDialog
+import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.widget.*
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.edit
 import androidx.core.content.ContextCompat
@@ -29,6 +31,7 @@ import okhttp3.Request
 import top.aidanrao.buaa_classhopper.NavigationManager
 import top.aidanrao.buaa_classhopper.R
 import top.aidanrao.buaa_classhopper.data.model.dto.UserInfoDto
+import top.aidanrao.buaa_classhopper.data.repository.CourseRepository
 import top.aidanrao.buaa_classhopper.ui.CourseTableRenderer
 import top.aidanrao.buaa_classhopper.ui.IClassAvailabilityIndicator
 import top.aidanrao.buaa_classhopper.viewmodel.MainViewModel
@@ -225,7 +228,11 @@ class MainActivity : AppCompatActivity() {
         }
 
         viewModel.error.observe(this) { errorMsg ->
-            Toast.makeText(this, errorMsg, Toast.LENGTH_LONG).show()
+            if (errorMsg == CourseRepository.VPN_SESSION_EXPIRED_MESSAGE) {
+                showVpnSessionExpiredDialog()
+            } else {
+                Toast.makeText(this, errorMsg, Toast.LENGTH_LONG).show()
+            }
         }
 
         viewModel.toastMessage.observe(this) { msg ->
@@ -262,6 +269,23 @@ class MainActivity : AppCompatActivity() {
     private fun showEmptyState() {
         tableLayout.visibility = View.GONE
         emptyStateLayout.visibility = View.VISIBLE
+    }
+
+    private var vpnExpiredDialogShown = false
+    private fun showVpnSessionExpiredDialog() {
+        if (vpnExpiredDialogShown) return
+        vpnExpiredDialogShown = true
+        AlertDialog.Builder(this)
+            .setTitle("VPN 会话已失效")
+            .setMessage("登录状态已过期，请重新通过 SSO 登录北航 VPN 后继续使用")
+            .setCancelable(false)
+            .setPositiveButton("去登录") { dialog, _ ->
+                dialog.dismiss()
+                startActivity(Intent(this, VpnLoginActivity::class.java))
+            }
+            .setNegativeButton("取消", null)
+            .setOnDismissListener { vpnExpiredDialogShown = false }
+            .show()
     }
 
     private fun hideEmptyState() {

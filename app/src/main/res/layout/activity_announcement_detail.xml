@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/home_background"
+    android:orientation="vertical"
     tools:context=".AnnouncementDetailActivity">
 
     <androidx.appcompat.widget.Toolbar
@@ -11,102 +14,143 @@
         android:layout_height="?attr/actionBarSize"
         android:background="?attr/colorPrimary"
         android:elevation="4dp"
-        android:theme="@style/ThemeOverlay.AppCompat.ActionBar"
-        tools:ignore="MissingConstraints" />
+        android:theme="@style/ThemeOverlay.AppCompat.ActionBar" />
 
-    <ScrollView
-        android:id="@+id/scroll_view"
+    <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_below="@id/toolbar"
-        android:padding="16dp">
+        android:layout_height="0dp"
+        android:layout_weight="1">
 
-        <LinearLayout
+        <ScrollView
+            android:id="@+id/scroll_view"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:paddingBottom="24dp">
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:scrollbars="none">
 
-            <!-- 公告标题 -->
-            <TextView
-                android:id="@+id/announcement_title"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp"
-                android:textSize="22sp"
-                android:textStyle="bold"
-                tools:text="博雅助手使用公告" />
-
-            <!-- 发布时间 -->
-            <TextView
-                android:id="@+id/announcement_time"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                android:textColor="@android:color/darker_gray"
-                android:textSize="14sp"
-                tools:text="2025-05-05" />
-
-            <!-- 封面图片 -->
-            <ImageView
-                android:id="@+id/announcement_cover"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                android:adjustViewBounds="true"
-                android:maxHeight="300dp"
-                android:scaleType="centerCrop"
-                tools:src="@android:drawable/ic_menu_gallery" />
-
-            <!-- 作者信息 -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:padding="12dp"
-                android:background="#F5F5F5"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="16dp">
+                android:orientation="vertical"
+                android:paddingStart="16dp"
+                android:paddingTop="16dp"
+                android:paddingEnd="16dp"
+                android:paddingBottom="24dp">
 
-                <!-- 作者头像 -->
+                <!-- 封面图片 -->
                 <ImageView
-                    android:id="@+id/author_avatar"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:layout_marginRight="12dp"
-                    android:scaleType="centerCrop"
-                    android:background="@android:drawable/ic_menu_gallery" />
-
-                <!-- 作者名称 -->
-                <TextView
-                    android:id="@+id/author_name"
-                    android:layout_width="wrap_content"
+                    android:id="@+id/announcement_cover"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:textSize="14sp"
-                    android:textColor="@android:color/darker_gray"
-                    tools:text="发布者: xuan" />
+                    android:adjustViewBounds="true"
+                    android:background="@drawable/bg_announcement_cover"
+                    android:clipToOutline="true"
+                    android:maxHeight="260dp"
+                    android:scaleType="centerCrop"
+                    android:visibility="gone"
+                    tools:src="@android:drawable/ic_menu_gallery"
+                    tools:visibility="visible" />
 
+                <!-- 标题 + 作者卡片 -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:background="@drawable/bg_home_result_card"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/announcement_title"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-medium"
+                        android:lineSpacingMultiplier="1.25"
+                        android:textColor="@color/home_text_primary"
+                        android:textSize="22sp"
+                        tools:text="博雅助手使用公告" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginTop="14dp"
+                        android:background="@color/home_card_border" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <FrameLayout
+                            android:layout_width="36dp"
+                            android:layout_height="36dp"
+                            android:background="@drawable/bg_announcement_avatar_ring"
+                            android:padding="2dp">
+
+                            <ImageView
+                                android:id="@+id/author_avatar"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:scaleType="centerCrop"
+                                tools:src="@android:drawable/ic_menu_gallery" />
+                        </FrameLayout>
+
+                        <TextView
+                            android:id="@+id/author_name"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="10dp"
+                            android:layout_weight="1"
+                            android:ellipsize="end"
+                            android:fontFamily="sans-serif-medium"
+                            android:maxLines="1"
+                            android:textColor="@color/home_text_primary"
+                            android:textSize="13sp"
+                            tools:text="xuan" />
+
+                        <TextView
+                            android:id="@+id/announcement_time"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_announcement_time_chip"
+                            android:paddingStart="10dp"
+                            android:paddingTop="4dp"
+                            android:paddingEnd="10dp"
+                            android:paddingBottom="4dp"
+                            android:textColor="@color/home_table_text"
+                            android:textSize="11sp"
+                            tools:text="2025-05-05" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- 公告内容卡片 -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:background="@drawable/bg_home_result_card"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/announcement_content"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:lineSpacingMultiplier="1.55"
+                        android:textColor="@color/home_text_primary"
+                        android:textSize="15sp"
+                        tools:text="目前，博雅服务需要提供北航统一认证密码才可以正常使用。\n\n我们承诺，统一认证密码会经过加密存储到数据库中，在使用时解密。" />
+                </LinearLayout>
             </LinearLayout>
+        </ScrollView>
 
-            <!-- 公告内容 -->
-            <TextView
-                android:id="@+id/announcement_content"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:lineSpacingMultiplier="1.5"
-                android:textSize="16sp"
-                tools:text="目前，博雅服务需要提供北航统一认证密码才可以正常使用。\n\n我们承诺，统一认证密码会经过加密存储到数据库中，在使用时解密。由于需要经sso进入博雅系统，因此在使用时我们必须对密码进行解密，使用对称的加密方式获取明文。在加密和解密过程中，我们保证不会通过日志等方式记录明文，感谢您的信任和支持！\n\n如果需要使用，请前往【我的】，点击用户头像一栏的 > 图标，同意授权后设置北航密码。" />
+        <!-- 加载进度条 -->
+        <ProgressBar
+            android:id="@+id/progress_bar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:visibility="gone" />
+    </FrameLayout>
 
-        </LinearLayout>
-
-    </ScrollView>
-
-    <!-- 加载进度条 -->
-    <ProgressBar
-        android:id="@+id/progress_bar"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_centerInParent="true"
-        android:visibility="gone" />
-
-</RelativeLayout>
+</LinearLayout>

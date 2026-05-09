@@ -48,7 +48,7 @@
                         android:background="@drawable/bg_home_icon_button"
                         android:contentDescription="打开侧边栏"
                         android:padding="12dp"
-                        android:src="@drawable/ic_home_menu"
+                        android:src="@drawable/ic_ph_list"
                         app:layout_constraintStart_toStartOf="parent"
                         app:layout_constraintTop_toTopOf="parent" />
 
@@ -59,7 +59,7 @@
                         android:background="@drawable/bg_home_icon_button"
                         android:contentDescription="扫码"
                         android:padding="12dp"
-                        android:src="@drawable/ic_home_scan"
+                        android:src="@drawable/ic_ph_qr_code"
                         app:layout_constraintEnd_toEndOf="parent"
                         app:layout_constraintTop_toTopOf="parent" />
 
@@ -142,7 +142,7 @@
                                 android:layout_height="24dp"
                                 android:layout_centerVertical="true"
                                 android:contentDescription="学号"
-                                android:src="@drawable/ic_home_student" />
+                                android:src="@drawable/ic_ph_identification_card" />
 
                             <EditText
                                 android:id="@+id/editTextId"
@@ -177,7 +177,7 @@
                                 android:layout_height="24dp"
                                 android:layout_centerVertical="true"
                                 android:contentDescription="选择日期"
-                                android:src="@drawable/ic_home_calendar" />
+                                android:src="@drawable/ic_ph_calendar_blank" />
 
                             <TextView
                                 android:id="@+id/textViewDate"
@@ -337,10 +337,12 @@
 
     <LinearLayout
         android:id="@+id/drawer_container"
-        android:layout_width="260dp"
+        android:layout_width="284dp"
         android:layout_height="match_parent"
         android:layout_gravity="start"
-        android:background="@android:color/white"
+        android:background="@drawable/bg_drawer_container"
+        android:clipToOutline="true"
+        android:elevation="8dp"
         android:fitsSystemWindows="true"
         android:orientation="vertical">
 
@@ -353,10 +355,15 @@
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
-            android:background="@android:color/white"
-            app:menu="@menu/drawer_menu"
+            android:background="@android:color/transparent"
+            app:itemBackground="@drawable/bg_drawer_item_selector"
+            app:itemHorizontalPadding="20dp"
+            app:itemIconPadding="16dp"
+            app:itemIconSize="22dp"
+            app:itemIconTint="@color/drawer_icon_color_selector"
+            app:itemTextAppearance="@style/DrawerItemTextAppearance"
             app:itemTextColor="@color/drawer_item_color_selector"
-            app:itemIconTint="@color/drawer_icon_color_selector" />
+            app:menu="@menu/drawer_menu" />
 
         <View
             android:layout_width="match_parent"

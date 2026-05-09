@@ -16,6 +16,8 @@ import top.aidanrao.buaa_classhopper.data.api.interceptor.TokenAuthenticator
 import top.aidanrao.buaa_classhopper.data.repository.TokenManager
 import top.aidanrao.buaa_classhopper.data.vpn.VpnCookieJar
 import top.aidanrao.buaa_classhopper.data.vpn.VpnEndpoints
+import top.aidanrao.buaa_classhopper.data.vpn.VpnPreferences
+import top.aidanrao.buaa_classhopper.data.vpn.VpnSessionInterceptor
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import dagger.Module
@@ -119,12 +121,14 @@ object NetworkModule {
     @Named(CLIENT_VPN)
     fun provideVpnOkHttpClient(
         loggingInterceptor: LoggingInterceptor,
-        vpnCookieJar: VpnCookieJar
+        vpnCookieJar: VpnCookieJar,
+        vpnPreferences: VpnPreferences
     ): OkHttpClient {
         return OkHttpClient.Builder()
             .sslSocketFactory(SslTrustManager.getUnsafeSslSocketFactory(), SslTrustManager.getUnsafeTrustManager())
             .hostnameVerifier { _, _ -> true }
             .cookieJar(vpnCookieJar)
+            .addInterceptor(VpnSessionInterceptor(vpnCookieJar, vpnPreferences))
             .addInterceptor(loggingInterceptor)
             .build()
     }
