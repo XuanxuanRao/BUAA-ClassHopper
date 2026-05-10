@@ -9,6 +9,9 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.resource.bitmap.CenterCrop
+import com.bumptech.glide.load.resource.bitmap.RoundedCorners
+import com.bumptech.glide.request.RequestOptions
 import top.aidanrao.buaa_classhopper.R
 import top.aidanrao.buaa_classhopper.data.model.dto.AnnouncementDto
 import top.aidanrao.buaa_classhopper.viewmodel.AnnouncementViewModel
@@ -20,7 +23,7 @@ class AnnouncementActivity : AppCompatActivity() {
     private lateinit var toolbar: Toolbar
     private lateinit var announcementListView: ListView
     private lateinit var progressBar: ProgressBar
-    private lateinit var emptyTextView: TextView
+    private lateinit var emptyContainer: View
     private lateinit var announcementAdapter: AnnouncementAdapter
 
     private val viewModel: AnnouncementViewModel by viewModels()
@@ -39,7 +42,7 @@ class AnnouncementActivity : AppCompatActivity() {
         toolbar = findViewById(R.id.toolbar)
         announcementListView = findViewById(R.id.announcement_list)
         progressBar = findViewById(R.id.progress_bar)
-        emptyTextView = findViewById(R.id.empty_text)
+        emptyContainer = findViewById(R.id.empty_container)
 
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
@@ -90,16 +93,17 @@ class AnnouncementActivity : AppCompatActivity() {
     private fun showProgress() {
         progressBar.visibility = View.VISIBLE
         announcementListView.visibility = View.GONE
-        emptyTextView.visibility = View.GONE
+        emptyContainer.visibility = View.GONE
     }
 
     private fun hideProgress() {
         progressBar.visibility = View.GONE
         announcementListView.visibility = View.VISIBLE
+        emptyContainer.visibility = View.GONE
     }
 
     private fun showEmptyState() {
-        emptyTextView.visibility = View.VISIBLE
+        emptyContainer.visibility = View.VISIBLE
         announcementListView.visibility = View.GONE
         progressBar.visibility = View.GONE
     }
@@ -125,21 +129,37 @@ class AnnouncementActivity : AppCompatActivity() {
             val coverImage = view.findViewById<ImageView>(R.id.announcement_cover)
             val titleTextView = view.findViewById<TextView>(R.id.announcement_title)
             val timeTextView = view.findViewById<TextView>(R.id.announcement_time)
-            
+            val authorTextView = view.findViewById<TextView>(R.id.announcement_author)
+
             titleTextView.text = announcement.title
             timeTextView.text = announcement.createTime.substringBefore('T')
-            
+            val posterName = announcement.posterUsername
+            if (!posterName.isNullOrBlank()) {
+                authorTextView.text = "发布者: $posterName"
+                authorTextView.visibility = View.VISIBLE
+            } else {
+                authorTextView.visibility = View.GONE
+            }
+
             // 加载封面图片
             if (!announcement.cover.isNullOrEmpty()) {
                 try {
                     Glide.with(this@AnnouncementActivity)
                         .load(announcement.cover)
+                        .apply(
+                            RequestOptions().transform(
+                                CenterCrop(),
+                                RoundedCorners(resources.displayMetrics.density.toInt() * 14)
+                            )
+                        )
                         .placeholder(android.R.drawable.ic_menu_gallery)
                         .error(android.R.drawable.ic_menu_gallery)
                         .into(coverImage)
                 } catch (e: Exception) {
                     e.printStackTrace()
                 }
+            } else {
+                coverImage.setImageResource(android.R.drawable.ic_menu_gallery)
             }
             
             return view

@@ -26,7 +26,7 @@ android {
         minSdk = 28
         targetSdk = 34
         versionCode = 1
-        versionName = "1.0"
+        versionName = "1.1"
 
         buildConfigField("String", "APP_SECRET", "\"${System.getenv("APP_SECRET") ?: localProperties.getProperty("APP_SECRET", "")}\"")
 
@@ -86,6 +86,7 @@ dependencies {
     implementation("androidx.activity:activity-ktx:1.8.0")
     implementation("com.github.bumptech.glide:glide:4.16.0")
     implementation("com.journeyapps:zxing-android-embedded:4.3.0")
+    implementation(libs.androidx.security.crypto)
     annotationProcessor("com.github.bumptech.glide:compiler:4.16.0")
     
     testImplementation(libs.junit)

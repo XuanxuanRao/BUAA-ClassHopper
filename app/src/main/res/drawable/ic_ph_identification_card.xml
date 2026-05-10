@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Phosphor Icons / IdentificationCard (regular, stroke) -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="256"
+    android:viewportHeight="256"
+    android:tint="#FF4C7DFF">
+    <!-- 卡片边框 -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:pathData="M40,48 L216,48 A8,8 0 0 1 224,56 L224,200 A8,8 0 0 1 216,208 L40,208 A8,8 0 0 1 32,200 L32,56 A8,8 0 0 1 40,48 Z"
+        android:strokeColor="#000000"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:strokeWidth="16" />
+    <!-- 右侧短线 1 -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:pathData="M152,112 L192,112"
+        android:strokeColor="#000000"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:strokeWidth="16" />
+    <!-- 右侧短线 2 -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:pathData="M152,144 L192,144"
+        android:strokeColor="#000000"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:strokeWidth="16" />
+    <!-- 头像圆圈 -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:pathData="M96,96 m-24,0 a24,24 0 1,0 48,0 a24,24 0 1,0 -48,0"
+        android:strokeColor="#000000"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:strokeWidth="16" />
+    <!-- 身体弧线 -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:pathData="M64,168 C67.55,154.2 81.09,144 96,144 S124.46,154.19 128,168"
+        android:strokeColor="#000000"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:strokeWidth="16" />
+</vector>

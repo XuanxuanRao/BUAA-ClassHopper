@@ -1,28 +1,31 @@
 package top.aidanrao.buaa_classhopper.activity
 
 import android.app.DatePickerDialog
+import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.widget.*
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.edit
+import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import com.bumptech.glide.Glide
-import top.aidanrao.buaa_classhopper.viewmodel.MainViewModel
-import top.aidanrao.buaa_classhopper.R
 import com.google.android.material.navigation.NavigationView
-import top.aidanrao.buaa_classhopper.NavigationManager
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
 import dagger.hilt.android.AndroidEntryPoint
+import top.aidanrao.buaa_classhopper.NavigationManager
+import top.aidanrao.buaa_classhopper.R
 import top.aidanrao.buaa_classhopper.data.model.dto.UserInfoDto
+import top.aidanrao.buaa_classhopper.data.repository.CourseRepository
 import top.aidanrao.buaa_classhopper.ui.CourseTableRenderer
-import top.aidanrao.buaa_classhopper.ui.WebSocketStatusIndicator
+import top.aidanrao.buaa_classhopper.viewmodel.MainViewModel
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -35,8 +38,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var calendarIcon: ImageView
     private lateinit var emptyStateLayout: LinearLayout
     private lateinit var userInfoTextView: TextView
-    private lateinit var webSocketStatusIcon: ImageView
-    private lateinit var webSocketStatusIndicator: WebSocketStatusIndicator
     private lateinit var courseTableRenderer: CourseTableRenderer
     private lateinit var scanButton: ImageButton
     private lateinit var scanLauncher: ActivityResultLauncher<ScanOptions>
@@ -79,11 +80,19 @@ class MainActivity : AppCompatActivity() {
         val sharedPreferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
         val savedStudentId = sharedPreferences.getString(KEY_STUDENT_ID, "22370000")
         editTextId.setText(savedStudentId)
+        applyIdentityLine(studentId = savedStudentId, rawName = null)
         
         // 设置默认日期
         val currentDate = Calendar.getInstance()
         val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
         textViewDate.text = dateFormat.format(currentDate.time)
+        
+        // 如果学号和日期都已填充，自动加载课表
+        val studentId = editTextId.text.toString()
+        val date = textViewDate.text.toString()
+        if (studentId.isNotEmpty() && date.isNotEmpty()) {
+            viewModel.getClassInfo(studentId, date)
+        }
     }
 
     private fun initViews() {
@@ -94,14 +103,11 @@ class MainActivity : AppCompatActivity() {
         calendarIcon = findViewById(R.id.calendarIcon)
         emptyStateLayout = findViewById(R.id.emptyStateLayout)
         userInfoTextView = findViewById(R.id.userInfoTextView)
-        webSocketStatusIcon = findViewById(R.id.webSocketStatusIcon)
         hamburgerButton = findViewById(R.id.hamburger_button)
         drawerLayout = findViewById(R.id.drawer_layout)
         navView = findViewById(R.id.nav_view)
         scanButton = findViewById(R.id.scanButton)
 
-        webSocketStatusIndicator = WebSocketStatusIndicator(this, webSocketStatusIcon)
-        
         courseTableRenderer = CourseTableRenderer(
             context = this,
             tableLayout = tableLayout,
@@ -189,7 +195,10 @@ class MainActivity : AppCompatActivity() {
         }
 
         viewModel.userInfo.observe(this) { info ->
-            userInfoTextView.text = info
+            applyIdentityLine(
+                studentId = editTextId.text?.toString(),
+                rawName = info
+            )
         }
 
         viewModel.isEmpty.observe(this) { isEmpty ->
@@ -197,26 +206,33 @@ class MainActivity : AppCompatActivity() {
         }
 
         viewModel.error.observe(this) { errorMsg ->
-            Toast.makeText(this, errorMsg, Toast.LENGTH_LONG).show()
+            if (errorMsg == CourseRepository.VPN_SESSION_EXPIRED_MESSAGE) {
+                showVpnSessionExpiredDialog()
+            } else {
+                Toast.makeText(this, errorMsg, Toast.LENGTH_LONG).show()
+            }
         }
 
         viewModel.toastMessage.observe(this) { msg ->
             Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
         }
-
-        viewModel.webSocketStatus.observe(this) { status ->
-            when (status) {
-                MainViewModel.WebSocketStatus.CONNECTED -> webSocketStatusIndicator.showConnected()
-                MainViewModel.WebSocketStatus.CONNECTING -> webSocketStatusIndicator.showConnecting()
-                MainViewModel.WebSocketStatus.DISCONNECTED -> webSocketStatusIndicator.showDisconnected()
-                else -> webSocketStatusIndicator.showDisconnected()
-            }
-        }
         
         // 观察用户信息变化
         viewModel.userProfile.observe(this) { userInfo ->
+            applyIdentityLine(
+                studentId = userInfo.studentId,
+                rawName = userInfo.username
+            )
             updateDrawerHeader(userInfo)
         }
+    }
+
+    override fun onStart() {
+        super.onStart()
+    }
+
+    override fun onStop() {
+        super.onStop()
     }
     
     override fun onPause() {
@@ -229,6 +245,23 @@ class MainActivity : AppCompatActivity() {
     private fun showEmptyState() {
         tableLayout.visibility = View.GONE
         emptyStateLayout.visibility = View.VISIBLE
+    }
+
+    private var vpnExpiredDialogShown = false
+    private fun showVpnSessionExpiredDialog() {
+        if (vpnExpiredDialogShown) return
+        vpnExpiredDialogShown = true
+        AlertDialog.Builder(this)
+            .setTitle("VPN 会话已失效")
+            .setMessage("登录状态已过期，请重新通过 SSO 登录北航 VPN 后继续使用")
+            .setCancelable(false)
+            .setPositiveButton("去登录") { dialog, _ ->
+                dialog.dismiss()
+                startActivity(Intent(this, VpnLoginActivity::class.java))
+            }
+            .setNegativeButton("取消", null)
+            .setOnDismissListener { vpnExpiredDialogShown = false }
+            .show()
     }
 
     private fun hideEmptyState() {
@@ -285,38 +318,56 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun applyIdentityLine(studentId: String?, rawName: String?) {
+        val cleanedStudentId = studentId?.trim().orEmpty()
+        val cleanedName = rawName
+            ?.substringBefore(" - ")
+            ?.trim()
+            .orEmpty()
+
+        userInfoTextView.text = listOf(cleanedStudentId, cleanedName)
+            .filter { it.isNotEmpty() }
+            .joinToString("  ")
+            .ifEmpty { "学号  姓名" }
+    }
+
     private fun updateDrawerHeader(userInfo: UserInfoDto) {
-        val footerView = findViewById<View>(R.id.drawer_footer) ?: return
+        val headerView = findViewById<View>(R.id.drawer_header) ?: return
         
-        val avatarImage = footerView.findViewById<ImageView>(R.id.avatar_image)
-        val studentIdText = footerView.findViewById<TextView>(R.id.student_id_text)
-        val verifiedText = footerView.findViewById<TextView>(R.id.verified_text)
+        val avatarImage = headerView.findViewById<ImageView>(R.id.avatar_image)
+        val studentIdText = headerView.findViewById<TextView>(R.id.student_id_text)
+        val verifiedText = headerView.findViewById<TextView>(R.id.verified_text)
         
-        // 设置学生ID
         studentIdText.text = userInfo.studentId
         
-        // 设置认证状态
-        verifiedText.text = if (userInfo.verified) "已认证" else "未认证"
-        verifiedText.setTextColor(if (userInfo.verified) resources.getColor(android.R.color.holo_green_dark) else resources.getColor(android.R.color.darker_gray))
+        verifiedText.text = if (userInfo.verified) "已认证" else "未认证 / 点击登录"
+        verifiedText.setTextColor(
+            if (userInfo.verified) {
+                ContextCompat.getColor(this, android.R.color.holo_green_light)
+            } else {
+                ContextCompat.getColor(this, R.color.home_text_on_hero)
+            }
+        )
         
-        // 加载头像
         if (!userInfo.avatar.isNullOrEmpty()) {
-            // 使用Glide或其他图片加载库加载头像
             try {
                 Glide.with(this)
                     .load(userInfo.avatar)
                     .circleCrop()
-                    .placeholder(android.R.drawable.ic_menu_gallery)
-                    .error(android.R.drawable.ic_menu_gallery)
+                    .placeholder(R.drawable.ic_home_student)
+                    .error(R.drawable.ic_home_student)
                     .into(avatarImage)
             } catch (e: Exception) {
                 e.printStackTrace()
-                // 如果Glide出现异常，使用默认头像
-                avatarImage.setImageResource(android.R.drawable.ic_menu_gallery)
+                avatarImage.setImageResource(R.drawable.ic_home_student)
             }
         } else {
-            // 使用默认头像
-            avatarImage.setImageResource(android.R.drawable.ic_menu_gallery)
+            avatarImage.setImageResource(R.drawable.ic_home_student)
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        navView.setCheckedItem(R.id.menu_home)
     }
 }
