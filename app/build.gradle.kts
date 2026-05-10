@@ -26,7 +26,7 @@ android {
         minSdk = 28
         targetSdk = 34
         versionCode = 1
-        versionName = "1.0"
+        versionName = "1.1"
 
         buildConfigField("String", "APP_SECRET", "\"${System.getenv("APP_SECRET") ?: localProperties.getProperty("APP_SECRET", "")}\"")
 

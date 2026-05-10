@@ -15,30 +15,19 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.drawerlayout.widget.DrawerLayout
-import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
 import com.google.android.material.navigation.NavigationView
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
-import okhttp3.OkHttpClient
-import okhttp3.Request
 import top.aidanrao.buaa_classhopper.NavigationManager
 import top.aidanrao.buaa_classhopper.R
 import top.aidanrao.buaa_classhopper.data.model.dto.UserInfoDto
 import top.aidanrao.buaa_classhopper.data.repository.CourseRepository
 import top.aidanrao.buaa_classhopper.ui.CourseTableRenderer
-import top.aidanrao.buaa_classhopper.ui.IClassAvailabilityIndicator
 import top.aidanrao.buaa_classhopper.viewmodel.MainViewModel
 import java.text.SimpleDateFormat
 import java.util.*
-import javax.inject.Inject
-import javax.inject.Named
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
@@ -49,8 +38,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var calendarIcon: ImageView
     private lateinit var emptyStateLayout: LinearLayout
     private lateinit var userInfoTextView: TextView
-    private lateinit var statusIndicatorIcon: ImageView
-    private lateinit var iclassAvailabilityIndicator: IClassAvailabilityIndicator
     private lateinit var courseTableRenderer: CourseTableRenderer
     private lateinit var scanButton: ImageButton
     private lateinit var scanLauncher: ActivityResultLauncher<ScanOptions>
@@ -60,15 +47,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var hamburgerButton: ImageButton
 
     private val viewModel: MainViewModel by viewModels()
-    @Inject
-    @Named("authClient")
-    lateinit var iclassStatusHttpClient: OkHttpClient
-    private var iclassStatusPollingJob: Job? = null
 
     private val PREFS_NAME = "ClassHopperPrefs"
     private val KEY_STUDENT_ID = "student_id"
-    private val ICLASS_STATUS_URL = "https://iclass.buaa.edu.cn:8346/"
-    private val ICLASS_STATUS_POLL_INTERVAL_MS = 30_000L
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -122,14 +103,11 @@ class MainActivity : AppCompatActivity() {
         calendarIcon = findViewById(R.id.calendarIcon)
         emptyStateLayout = findViewById(R.id.emptyStateLayout)
         userInfoTextView = findViewById(R.id.userInfoTextView)
-        statusIndicatorIcon = findViewById(R.id.webSocketStatusIcon)
         hamburgerButton = findViewById(R.id.hamburger_button)
         drawerLayout = findViewById(R.id.drawer_layout)
         navView = findViewById(R.id.nav_view)
         scanButton = findViewById(R.id.scanButton)
 
-        iclassAvailabilityIndicator = IClassAvailabilityIndicator(this, statusIndicatorIcon)
-        
         courseTableRenderer = CourseTableRenderer(
             context = this,
             tableLayout = tableLayout,
@@ -251,11 +229,9 @@ class MainActivity : AppCompatActivity() {
 
     override fun onStart() {
         super.onStart()
-        startIClassAvailabilityPolling()
     }
 
     override fun onStop() {
-        stopIClassAvailabilityPolling()
         super.onStop()
     }
     
@@ -353,49 +329,6 @@ class MainActivity : AppCompatActivity() {
             .filter { it.isNotEmpty() }
             .joinToString("  ")
             .ifEmpty { "学号  姓名" }
-    }
-
-    private fun startIClassAvailabilityPolling() {
-        if (iclassStatusPollingJob?.isActive == true) return
-
-        iclassStatusPollingJob = lifecycleScope.launch {
-            while (isActive) {
-                updateIClassAvailabilityIndicator()
-                delay(ICLASS_STATUS_POLL_INTERVAL_MS)
-            }
-        }
-    }
-
-    private fun stopIClassAvailabilityPolling() {
-        iclassStatusPollingJob?.cancel()
-        iclassStatusPollingJob = null
-    }
-
-    private suspend fun updateIClassAvailabilityIndicator() {
-        val isReachable = kotlinx.coroutines.withContext(Dispatchers.IO) {
-            checkIClassAvailability()
-        }
-
-        if (isReachable) {
-            iclassAvailabilityIndicator.showReachable()
-        } else {
-            iclassAvailabilityIndicator.showUnreachable()
-        }
-    }
-
-    private fun checkIClassAvailability(): Boolean {
-        val request = Request.Builder()
-            .url(ICLASS_STATUS_URL)
-            .head()
-            .build()
-
-        return try {
-            iclassStatusHttpClient.newCall(request).execute().use { response ->
-                response.code in 200..499
-            }
-        } catch (_: Exception) {
-            false
-        }
     }
 
     private fun updateDrawerHeader(userInfo: UserInfoDto) {

@@ -78,41 +78,9 @@
                         android:text="学号 姓名"
                         android:textColor="@color/home_text_on_hero"
                         android:textSize="15sp"
-                        app:layout_constraintEnd_toStartOf="@id/webSocketStatusGroup"
+                        app:layout_constraintEnd_toEndOf="parent"
                         app:layout_constraintStart_toStartOf="parent"
                         app:layout_constraintTop_toBottomOf="@id/hamburger_button" />
-
-                    <LinearLayout
-                        android:id="@+id/webSocketStatusGroup"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="28dp"
-                        android:background="@drawable/bg_home_status_chip"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal"
-                        android:paddingStart="12dp"
-                        android:paddingTop="8dp"
-                        android:paddingEnd="12dp"
-                        android:paddingBottom="8dp"
-                        app:layout_constraintEnd_toEndOf="parent"
-                        app:layout_constraintTop_toBottomOf="@id/scanButton">
-
-                        <ImageView
-                            android:id="@+id/webSocketStatusIcon"
-                            android:layout_width="18dp"
-                            android:layout_height="18dp"
-                            android:contentDescription="WebSocket 未连接"
-                            android:src="@android:drawable/presence_offline"
-                            app:tint="@color/ws_disconnected" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="6dp"
-                            android:text="实时状态"
-                            android:textColor="@color/home_text_on_hero"
-                            android:textSize="12sp" />
-                    </LinearLayout>
                 </androidx.constraintlayout.widget.ConstraintLayout>
 
                 <LinearLayout
