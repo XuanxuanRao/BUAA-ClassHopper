@@ -182,6 +182,8 @@ class CourseRepository @Inject constructor(
         return sharedPreferences.getBoolean(KEY_FALLBACK_ENABLED, false)
     }
 
+    fun isFallbackEnabledPublic(): Boolean = isFallbackEnabled()
+
     private fun convertFallbackCourse(fallback: FallbackCourseDto): CourseDto? {
         return try {
             CourseDto(

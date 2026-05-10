@@ -142,8 +142,7 @@ class MainViewModel @Inject constructor(
                     }
                 }
                 is Result.Error -> {
-                    val token = authRepository.getValidToken()
-                    if (token != null) {
+                    if (courseRepository.isFallbackEnabledPublic() && authRepository.getValidToken() != null) {
                         val dateStr = date.replace("-", "")
                         fetchCourseScheduleFallback(dateStr)
                     } else {
